@@ -37,7 +37,7 @@ async fn main() {
         .and(users)
         .map(|ws: warp::ws::Ws, users| {
             // This will call our function if the handshake succeeds.
-            ws.on_upgrade(move |socket| user_connected(socket, users))
+            ws.on_upgrade(move |socket: WebSocket| user_connected(socket, users))
         });
 
     // GET / -> index html
@@ -100,6 +100,7 @@ async fn user_connected(ws: WebSocket, users: Users) {
 async fn user_message(my_id: usize, msg: Message, users: &Users) {
     // Skip any non-Text messages...
     let msg = if let Ok(s) = msg.to_str() {
+        eprintln!("new user msg: {}", s);
         s
     } else {
         return;
