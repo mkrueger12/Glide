@@ -22,6 +22,7 @@ type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 
 #[tokio::main]
 async fn main() {
+
     pretty_env_logger::init();
 
     // Keep track of all connected users, key is usize, value
@@ -98,6 +99,7 @@ async fn user_connected(ws: WebSocket, users: Users) {
 }
 
 async fn user_message(my_id: usize, msg: Message, users: &Users) {
+    
     // Skip any non-Text messages...
     let msg = if let Ok(s) = msg.to_str() {
         eprintln!("new user msg: {}", s);
@@ -110,7 +112,9 @@ async fn user_message(my_id: usize, msg: Message, users: &Users) {
 
     // New message from this user, send it to everyone else (except same uid)...
     for (&uid, tx) in users.read().await.iter() {
+
         if my_id != uid {
+
             if let Err(_disconnected) = tx.send(Message::text(new_msg.clone())) {
                 // The tx is disconnected, our `user_disconnected` code
                 // should be happening in another task, nothing more to
