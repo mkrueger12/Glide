@@ -3,7 +3,7 @@
 use futures::{FutureExt, StreamExt};
 use warp::Filter;
 
-// curl --include --no-sessionid --header "Connection: Upgrade" --header "Upgrade: websocket" --header "Host: localhost:3030" --header "Origin: http://localhost:3030" --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" --header "Sec-WebSocket-Version: 13" --url http://localhost:3030/echo
+// curl --include --no-sessionid --header "Connection: Upgrade" --header "Upgrade: websocket" --header "Host: localhost:3030" --header "Origin: ws://localhost:3030" --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" --header "Sec-WebSocket-Version: 13" --url http://localhost:3030/echo
 
 
 #[tokio::main]
