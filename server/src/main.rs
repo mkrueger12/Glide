@@ -4,6 +4,8 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
+// mod routes;
+mod providers;
 
 use futures::{SinkExt, StreamExt, TryFutureExt};
 use tokio::sync::{mpsc, RwLock};
@@ -99,7 +101,7 @@ async fn user_connected(ws: WebSocket, users: Users) {
 }
 
 async fn user_message(my_id: usize, msg: Message, users: &Users) {
-    
+
     // Skip any non-Text messages...
     let msg = if let Ok(s) = msg.to_str() {
         eprintln!("new user msg: {}", s);
