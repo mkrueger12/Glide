@@ -110,13 +110,11 @@ async fn user_message(my_id: usize, msg: Message, users: &Users) {
         return;
     };
 
-<<<<<<< HEAD
-    let model_response = providers::openai::openia_chat(msg.to_string()).await;
-=======
-    let model_response = providers::openai::chat_with_gpt(msg).unwrap();
->>>>>>> parent of 92841a7 (use openai crate)
+    let model_response = providers::openai::chat_with_gpt(msg).await;
 
-    let new_msg = format!("<User#{}>: {}", my_id, model_response);
+    eprintln!("model response: {:#?}", model_response);
+
+    let new_msg = format!("<User#{}>: {:#?}", my_id, model_response);
 
     // New message from this user, send it to everyone else (except same uid)...
     for (&uid, tx) in users.read().await.iter() {
