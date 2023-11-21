@@ -112,14 +112,26 @@ async fn user_message(my_id: usize, msg: Message, users: &Users) {
 
     let model_response = providers::openai::chat_with_gpt(msg).await;
 
-    eprintln!("model response: {:#?}", model_response);
+    // Extract the inner string using pattern matching
+    let new_msg = match model_response {
+        Ok(inner_string) => {
+            // Do something with the inner string
+            format!("<User#{}>: {:#?}", my_id, inner_string)
 
-    let new_msg = format!("<User#{}>: {:#?}", my_id, model_response);
+        }
+        Err(err) => {
+            // Handle the error case
+            eprintln!("error: {:#?}", err);
+            String::from("An error occurred")
+        }
+    };
+
+    //let new_msg = format!("<User#{}>: {:#?}", my_id, msg);
 
     // New message from this user, send it to everyone else (except same uid)...
     for (&uid, tx) in users.read().await.iter() {
 
-        if my_id != uid {
+        if my_id == uid {
 
             if let Err(_disconnected) = tx.send(Message::text(new_msg.clone())) {
                 // The tx is disconnected, our `user_disconnected` code

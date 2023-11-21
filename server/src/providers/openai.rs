@@ -1,6 +1,7 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
-//use std::env;
+use std::env;
+use dotenvy::dotenv;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatGptRequest {
@@ -45,9 +46,19 @@ pub struct Usage {
 }
 
 // Function to interact with ChatGPT
-pub async fn chat_with_gpt(input: &str) -> Result<std::string::String, reqwest::Error> {
+pub async fn chat_with_gpt(input: &str) -> Result<String, reqwest::Error> {
 
     println!("input: {}", &input);
+
+    dotenv().ok();
+
+    // Set your OpenAI API key
+    let api_key = env::var("OPENAI_KEY").expect("OPENAI_KEY not set");
+
+    // Set up the HTTP client
+    let client = reqwest::Client::new();
+        
+    
 
     // Set up the request payload
     let request_payload = r#"{
@@ -63,16 +74,6 @@ pub async fn chat_with_gpt(input: &str) -> Result<std::string::String, reqwest::
           }
         ]
       }"#;
-
-    print!("request_payload: {:#?}", request_payload);
-
-    // Set your OpenAI API key
-    //let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
-    let api_key = ""; 
-
-    // Set up the HTTP client
-    let client = reqwest::Client::new();
-    
 
     // Make the API request
     let response: ChatGptResponse = client
