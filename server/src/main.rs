@@ -110,7 +110,7 @@ async fn user_message(my_id: usize, msg: Message, users: &Users) {
         return;
     };
 
-    let model_response = providers::openai::chat_with_gpt(msg).await;
+    let model_response = providers::openai::openia_chat(msg.to_string()).await;
 
     eprintln!("model response: {:#?}", model_response);
 
