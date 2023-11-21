@@ -1,7 +1,6 @@
-use reqwest::{self, Error, Response};
+use reqwest;
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::io;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatGptRequest {
@@ -18,17 +17,6 @@ struct ChatGptResponse {
 struct Choice {
     text: String,
 }
-
-
-pub fn main() {
-    // Example usage
-    let input_text = "Translate this English text to French: ";
-    match chat_with_gpt(input_text) {
-        Ok(response) => println!("ChatGPT Response: {}", response),
-        Err(err) => eprintln!("Error: {:?}", err),
-    }
-}
-
 
 // Function to interact with ChatGPT
 pub fn chat_with_gpt(input: &str) -> Result<String, reqwest::Error> {
@@ -64,11 +52,9 @@ pub fn chat_with_gpt(input: &str) -> Result<String, reqwest::Error> {
         .json()?;
 
     // Extract and return the response text
-    let choice = response.choices.get(0).ok_or_else(|| {
-        reqwest::Error::custom(io::ErrorKind::Other, "No response choices found in the API response")
-    })?;
+    let choice = response.choices.get(0);
 
-    Ok(choice.text.clone())
+    Ok(choice.unwrap().text.clone())
 }
 
 
