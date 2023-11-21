@@ -3,8 +3,8 @@ Rust-based LLM Router
 
 ## Supported Providers
 
-|| Provider  | Support Status  | Supported Endpoints |
-|---|---|---|---|
+|| Provider  | Support Status
+|---|---|---|
 | <img src="docs/images/openai.png" width=18 />| OpenAI | 🚧 Coming Soon  |
 | <img src="docs/images/azure.png" width=18>| Azure OpenAI | 🚧 Coming Soon  |
 | <img src="docs/images/anthropic.png" width=18>| Anthropic  | 🚧 Coming Soon  |
