@@ -4,6 +4,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
+use serde::{Deserialize, Serialize};
 // mod routes;
 mod providers;
 
@@ -22,6 +23,12 @@ static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 /// - Value is a sender of `warp::ws::Message`
 type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 
+#[derive(Deserialize, Serialize)]
+struct Payload {
+    model: String,
+    message: String,
+}
+
 #[tokio::main]
 async fn main() {
 
@@ -30,11 +37,12 @@ async fn main() {
     // Keep track of all connected users, key is usize, value
     // is a websocket sender.
     let users = Users::default();
+
     // Turn our "state" into a new Filter...
     let users = warp::any().map(move || users.clone());
 
-    // GET /chat -> websocket upgrade
-    let chat = warp::path("chat")
+    // GET /api/ws -> websocket upgrade
+    let sockets = warp::path("api/ws")
         // The `ws()` filter will prepare Websocket handshake...
         .and(warp::ws())
         .and(users)
@@ -43,10 +51,23 @@ async fn main() {
             ws.on_upgrade(move |socket: WebSocket| user_connected(socket, users))
         });
 
+    // POST /api/v1 with JSON body {"model":"openai","message": "hello"}
+    let client_payload = warp::post()
+    .and(warp::path("api/v1"))
+    .and(warp::body::content_length_limit(1024 * 16))
+    .and(warp::body::json::<Payload>())
+    .map(|_payload: Payload| {
+        // You can now use `payload` in your handler.
+        // For now, let's just respond with a 200 status.
+        warp::reply::with_status("Received", warp::http::StatusCode::OK)
+    });
+    
     // GET / -> index html
     let index = warp::path::end().map(|| warp::reply::html(INDEX_HTML));
 
-    let routes = index.or(chat);
+    let routes = index.or(sockets).or(client_payload);
+
+    //let routes = index.or(chat);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

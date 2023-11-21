@@ -3,6 +3,15 @@
 use warp::Filter;
 mod providers;
 
+
+
+#[derive(Deserialize, Serialize)]
+struct Payload {
+    model: String,
+    message: String,
+}
+
+
 #[tokio::main]
 pub async fn routes() {
     pretty_env_logger::init();
@@ -11,19 +20,36 @@ pub async fn routes() {
     // into super powers!
 
     // GET /
-    let hello_world = warp::path::end().map(|| "Hello, World at root!");
+    //let hello_world = warp::path::end().map(|| "Hello, World at root!");
 
-    // GET /openai
-    let hi = warp::path("openai").map(|| providers::openai::chat_with_gpt("Hello!").await.unwrap());
+    // GET /api/ws -> websocket upgrade
+    let sockets = warp::path("api/ws")
+        // The `ws()` filter will prepare Websocket handshake...
+        .and(warp::ws())
+        .and(users)
+        .map(|ws: warp::ws::Ws, users| {
+            // This will call our function if the handshake succeeds.
+            ws.on_upgrade(move |socket: WebSocket| user_connected(socket, users))
+        });
 
-    // How about multiple segments? First, we could use the `path!` macro:
-    //
-    // GET /hello/from/warp
-    let hello_from_warp = warp::path!("hello" / "from" / "warp").map(|| "Hello from warp!");
+    // GET / -> index html
+    let index = warp::path::end().map(|| warp::reply::html(INDEX_HTML));
 
-    // Fine, but how do I handle parameters in paths?
-    //
-    // GET /sum/:u32/:u32
-    let sum = warp::path!("sum" / u32 / u32).map(|a, b| format!("{} + {} = {}", a, b, a + b));
+    /// POST /api/v1 with JSON body
+    // POST /employees/:rate  {"name":"Sean","rate":2}
+    let client_payload = warp::post()
+        .and(warp::path("api" / "v1"))
+        .and(warp::path::param::String())
+        // Only accept bodies smaller than 16kb...
+        .and(warp::body::content_length_limit(1024 * 16))
+        .and(warp::body::json())
+        .map(|message, mut model: Payload| {
+            model.message = message;
+            warp::reply::json(&employee)
+        });
+
+    let routes = index.or(sockets).or(client_payload);
+
+    routes
 
 }
