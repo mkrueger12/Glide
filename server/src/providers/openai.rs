@@ -14,7 +14,7 @@ pub struct ChatGptResponse {
     object: String,
     created: u64,
     model: String,
-    system_fingerprint: String,
+    //system_fingerprint: String,
     choices: Vec<Choice>,
     usage: Usage,
 }
@@ -50,25 +50,25 @@ pub async fn chat_with_gpt(input: &str) -> Result<std::string::String, reqwest::
     println!("input: {}", &input);
 
     // Set up the request payload
-    let request_payload = serde_json::json!({
+    let request_payload = r#"{
         "model": "gpt-3.5-turbo",
         "messages": [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant." // this should be provided by user or YAML
-            },
-            {
-                "role": "user",
-                "content": &input // User question
-            }
+          {
+            "role": "system",
+            "content": "You are a helpful assistant."
+          },
+          {
+            "role": "user",
+            "content": "Hello!"
+          }
         ]
-    });
+      }"#;
 
     print!("request_payload: {:#?}", request_payload);
 
     // Set your OpenAI API key
     //let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
-    let api_key = "sk-<your key here>"; 
+    let api_key = ""; 
 
     // Set up the HTTP client
     let client = reqwest::Client::new();
@@ -79,7 +79,7 @@ pub async fn chat_with_gpt(input: &str) -> Result<std::string::String, reqwest::
         .post("https://api.openai.com/v1/chat/completions")
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
-        .json(&request_payload)
+        .body(request_payload)
         .send()
         .await?
         .json()
