@@ -1,6 +1,7 @@
 #![deny(warnings)]
 
 use warp::Filter;
+mod providers;
 
 #[tokio::main]
 pub async fn routes() {
@@ -12,8 +13,8 @@ pub async fn routes() {
     // GET /
     let hello_world = warp::path::end().map(|| "Hello, World at root!");
 
-    // GET /hi
-    let hi = warp::path("hi").map(|| "Hello, World!");
+    // GET /openai
+    let hi = warp::path("openai").map(|| providers::openai::chat_with_gpt("Hello!").await.unwrap());
 
     // How about multiple segments? First, we could use the `path!` macro:
     //
@@ -24,7 +25,5 @@ pub async fn routes() {
     //
     // GET /sum/:u32/:u32
     let sum = warp::path!("sum" / u32 / u32).map(|a, b| format!("{} + {} = {}", a, b, a + b));
-
-    // Any type that implements FromStr can be used, and in any order:
 
 }

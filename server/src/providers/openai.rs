@@ -58,8 +58,6 @@ pub async fn chat_with_gpt(input: &str) -> Result<String, reqwest::Error> {
     // Set up the HTTP client
     let client = reqwest::Client::new();
         
-    
-
     // Set up the request payload
     let request_payload = r#"{
         "model": "gpt-3.5-turbo",
