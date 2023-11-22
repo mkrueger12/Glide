@@ -1,11 +1,11 @@
-//#![deny(warnings)]
-#![allow(dead_code)]
+// #![deny(warnings)]
 use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
 
+use serde::{Deserialize, Serialize};
 
 mod providers;
 mod handlers;
@@ -16,20 +16,6 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
-use warp::reject::Reject;
-
-#[derive(Debug)]
-struct MyError {
-    message: String,
-}
-
-impl MyError {
-    fn new(message: String) -> Self {
-        Self { message }
-    }
-}
-
-impl Reject for MyError {}
 
 /// Our global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -51,7 +37,6 @@ async fn main() {
 
     // Turn our "state" into a new Filter...
     let users = warp::any().map(move || users.clone());
-    let users_clone = users.clone();
 
     // GET /ws -> websocket upgrade 
 
@@ -64,47 +49,31 @@ async fn main() {
         ws.on_upgrade(move |socket: WebSocket| user_connected(socket, users)) 
 
     });
-        
-        // POST /api/v1 with JSON body {"model":["gpt-3.5-turbo"],"message": ["hello"]}
-        let client_payload = warp::post()
-        .and(warp::path!("api" / "v1"))
-        .and(warp::body::content_length_limit(1024 * 16))
-        .and(warp::body::json::<model_router::Payload>())
-        .and(users_clone)
-        .and_then(|payload: model_router::Payload, users: Users| async move {
-            let provider_result = handlers::model_router::model_route(payload).await;
-            match provider_result {
-                Ok(provider) => {
-                    let response = match provider {
-                        model_router::ProviderOptions::First(first_option) => {
-                            let msg = Message::text(&first_option.prompt);
-                            user_message(0, msg, &users, &first_option.provider).await
-                        },
-                        model_router::ProviderOptions::Second(scnd_option) => {
-                            let msg = Message::text(&scnd_option.prompt);
-                            user_message(0, msg, &users, &scnd_option.provider).await
-                        },
-                    };
-                    match response {
-                        Ok(response_string) => {
-                            Ok::<_, warp::Rejection>(warp::reply::with_status(response_string, warp::http::StatusCode::OK))
-                        },
-                        Err(e) => {
-                            // Convert the error to a warp::Rejection
-                            Err(warp::reject::custom(MyError::new(e.to_string())))
-                        }
-                    }
-                },
-                Err(e) => {
-                    // Convert the error to a warp::Rejection
-                    Err(warp::reject::custom(MyError::new(e.to_string())))
-                }
+
+    // POST /api/v1 with JSON body {"model":["gpt-3.5-turbo"],"message": ["hello"]}
+    let client_payload = warp::post()
+    .and(warp::path!("api" / "v1"))
+    .and(warp::body::content_length_limit(1024 * 16))
+    .and(warp::body::json::<model_router::Payload>())
+    .and(users.clone())
+    .and_then(|payload: model_router::Payload, users: Users| async move {
+        let provider_result = handlers::model_router::model_route(payload).await;
+        match provider_result {
+            Ok(provider) => {
+                let msg = Message::text(provider.prompt);
+                user_message(0, msg, &users, &provider).await;
+                Ok::<_, warp::Rejection>(warp::reply::with_status("Received", warp::http::StatusCode::OK))
+            },
+            Err(e) => {
+                // Handle the error case
+                Err(warp::reject::custom(e))
             }
-        });
-    
-        let routes = chat.or(client_payload);
-    
-        warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+        }
+    });
+
+    let routes = chat.or(client_payload);
+
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
 
 async fn user_connected(ws: WebSocket, users: Users) {
@@ -151,7 +120,7 @@ async fn user_connected(ws: WebSocket, users: Users) {
 
         let model_provider = "openai";
 
-        let _r = user_message(my_id, msg, &users, model_provider).await;
+        user_message(my_id, msg, &users, model_provider).await;
     }
 
     // user_ws_rx stream will keep processing as long as the user stays
@@ -159,14 +128,14 @@ async fn user_connected(ws: WebSocket, users: Users) {
     user_disconnected(my_id, &users).await;
 }
 
-async fn user_message(my_id: usize, msg: Message, users: &Users, provider: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn user_message(my_id: usize, msg: Message, users: &Users, provider: &str) {
 
     // Skip any non-Text messages...
     let msg = if let Ok(s) = msg.to_str() {
         eprintln!("new user msg: {}", s);
         s
     } else {
-        return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Non-text message")));
+        return;
     };
 
     let model_response = if provider == "openai" {
@@ -175,7 +144,7 @@ async fn user_message(my_id: usize, msg: Message, users: &Users, provider: &str)
         providers::openai::chat_with_gpt(msg).await
     } else {
         println!("Invalid provider");
-        return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Invalid Provider")));
+        return;
     };
 
     //let model_response = providers::openai::chat_with_gpt(msg).await;
@@ -208,7 +177,6 @@ async fn user_message(my_id: usize, msg: Message, users: &Users, provider: &str)
             }
         }
     }
-    Ok(new_msg)
 }
 
 async fn user_disconnected(my_id: usize, users: &Users) {
@@ -217,3 +185,4 @@ async fn user_disconnected(my_id: usize, users: &Users) {
     // Stream closed up, so remove from the user list
     users.write().await.remove(&my_id);
 }
+

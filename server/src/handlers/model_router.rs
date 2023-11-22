@@ -11,21 +11,23 @@ use std::error::Error;
 
 #[derive(Deserialize, Serialize)]
 pub struct Payload { // This comes from the client
-    model: Vec<String>,
-    prompt: Vec<String>,
+    pub model: Vec<String>,
+    pub prompt: Vec<String>,
     //messages: Vec<HashMap<String, Value>>,
     //parameters: Vec<String>,
 }
 
 pub struct FirstOption {
-    model: String,
-    prompt: String,
+    pub model: String,
+    pub prompt: String,
+    pub provider: String,
     //messages: HashMap<String, Value>,
     //parameters: String,
 }
 pub struct ScndOption {
-    model: String,
-    prompt: String,
+    pub model: String,
+    pub prompt: String,
+    pub provider: String,
     //messages: HashMap<String, Value>,
     //parameters: String,
 }
@@ -41,27 +43,33 @@ struct OpenAIStatus {
     indicator: String,
 }
 
-pub async fn model_route(payload: Payload) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub enum ProviderOptions {
+    First(FirstOption),
+    Second(ScndOption),
+}
+
+pub async fn model_route(payload: Payload) -> Result<ProviderOptions, Box<dyn Error + Send + Sync>> {
     // Parse the POST payload
     let (first_option, scnd_option) = parse_post(payload).await;
 
     // Select the model
-    let (first_option_provider, scnd_option_provider) = select_model(first_option, scnd_option).await;
+    let first_option_provider = first_option.provider.clone();
+    let scnd_option_provider = scnd_option.provider.clone();
 
     // Check the API status for the first option provider
-    match check_api_status(first_option_provider.clone()).await {
+    match check_api_status(first_option_provider).await {
         Ok(status) if status == "OK" => {
             println!("First option provider API is Operational");
             // Continue with the rest of your code for the first option...
-            return Ok(first_option_provider);
+            return Ok(ProviderOptions::First(first_option));
         },
         _ => {
             // If the first option API is down, check the second option
-            match check_api_status(scnd_option_provider.clone()).await {
+            match check_api_status(scnd_option_provider).await {
                 Ok(status) if status == "OK" => {
                     println!("Second option provider API is Operational");
                     // Continue with the rest of your code for the second option...
-                    return Ok(scnd_option_provider);
+                    return Ok(ProviderOptions::Second(scnd_option));
                 },
                 _ => {
                     return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Both APIs are down")));
@@ -109,17 +117,11 @@ fn get_provider(model: &str) -> String {
     }
 }
 
-pub async fn select_model(first_option: FirstOption, scnd_options: ScndOption) -> (String, String) {
-    let first_option_provider = get_provider(&first_option.model);
-    let scnd_option_provider = get_provider(&scnd_options.model);
-
-    (first_option_provider, scnd_option_provider)
-}
-
 pub async fn parse_post(payload: Payload) -> (FirstOption, ScndOption) {
     let first_option = FirstOption {
         model: payload.model.get(0).unwrap_or(&String::new()).clone(),
         prompt: payload.prompt.get(0).unwrap_or(&String::new()).clone(),
+        provider: get_provider(payload.model.get(0).unwrap_or(&String::new())),
         //messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
        // parameters: payload.parameters.get(0).unwrap_or(&String::new()).clone(),
     };
@@ -127,6 +129,7 @@ pub async fn parse_post(payload: Payload) -> (FirstOption, ScndOption) {
     let scnd_option = ScndOption {
         model: payload.model.get(1).unwrap_or(&String::new()).clone(),
         prompt: payload.prompt.get(1).unwrap_or(&String::new()).clone(),
+        provider: get_provider(payload.model.get(1).unwrap_or(&String::new())),
        // messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
         //parameters: payload.parameters.get(1).unwrap_or(&String::new()).clone(),
     };
