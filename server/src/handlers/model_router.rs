@@ -1,14 +1,17 @@
 #![deny(warnings)]
 
+use std::collections::HashMap;
+use serde_json::Value;
+
 use serde::{Deserialize, Serialize};
 
-use warp::Filter;
+// use warp::Filter;
 
 #[derive(Deserialize, Serialize)]
 pub struct Payload {
     model: Vec<String>,
     prompt: Vec<String>,
-    messages: Vec<String>,
+    messages: Vec<HashMap<String, Value>>,
     parameters: Vec<String>,
 }
 
