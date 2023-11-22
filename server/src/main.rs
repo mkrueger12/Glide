@@ -44,7 +44,6 @@ async fn main() {
     // Turn our "state" into a new Filter...
     let users = warp::any().map(move || users.clone());
 
-    // GET /chat -> websocket upgrade
     // GET /ws -> websocket upgrade 
 
     let chat = warp::path("ws") 
@@ -55,7 +54,7 @@ async fn main() {
         // This will call our function if the handshake succeeds. 
         ws.on_upgrade(move |socket: WebSocket| user_connected(socket, users)) 
 
-    }); 
+    });
 
     // POST /api/v1 with JSON body {"model":["gpt-3.5-turbo"],"message": ["hello"]}
     let client_payload = warp::post()
@@ -67,7 +66,7 @@ async fn main() {
         // For now, let's just respond with a 200 status.
         warp::reply::with_status("Received", warp::http::StatusCode::OK)
     });
-    
+
     // GET / -> index html
     let index = warp::path::end().map(|| warp::reply::html(INDEX_HTML));
 
