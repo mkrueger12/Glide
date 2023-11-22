@@ -67,40 +67,29 @@ async fn main() {
         
         // POST /api/v1 with JSON body {"model":["gpt-3.5-turbo"],"message": ["hello"]}
         let client_payload = warp::post()
-        .and(warp::path!("api" / "v1"))
-        .and(warp::body::content_length_limit(1024 * 16))
-        .and(warp::body::json::<model_router::Payload>())
-        .and(users_clone)
-        .and_then(|payload: model_router::Payload, users: Users| async move {
-            let provider_result = handlers::model_router::model_route(payload).await;
-            match provider_result {
-                Ok(provider) => {
-                    let response = match provider {
-                        model_router::ProviderOptions::First(first_option) => {
-                            let msg = Message::text(&first_option.prompt);
-                            user_message(0, msg, &users, &first_option.provider).await
-                        },
-                        model_router::ProviderOptions::Second(scnd_option) => {
-                            let msg = Message::text(&scnd_option.prompt);
-                            user_message(0, msg, &users, &scnd_option.provider).await
-                        },
-                    };
-                    match response {
-                        Ok(response_string) => {
-                            Ok::<_, warp::Rejection>(warp::reply::with_status(response_string, warp::http::StatusCode::OK))
-                        },
-                        Err(e) => {
-                            // Convert the error to a warp::Rejection
-                            Err(warp::reject::custom(MyError::new(e.to_string())))
-                        }
+            .and(warp::path!("api" / "v1"))
+            .and(warp::body::content_length_limit(1024 * 16))
+            .and(warp::body::json::<model_router::Payload>())
+            .and(users_clone)
+            .and_then(|payload: model_router::Payload, users: Users| async move {
+                let provider_result = handlers::model_router::model_route(payload).await;
+                match provider_result {
+                    Ok(provider) => {
+                        let response = handle_provider(provider, &users).await.map_err(|e| warp::reject::custom(MyError::new(e.to_string())))?;
+                        Ok::<_, warp::Rejection>(warp::reply::with_status(response, warp::http::StatusCode::OK))
+                    },
+                    Err(e) => {
+                        // Convert the error to a warp::Rejection
+                        Err(warp::reject::custom(MyError::new(e.to_string())))
                     }
-                },
-                Err(e) => {
-                    // Convert the error to a warp::Rejection
-                    Err(warp::reject::custom(MyError::new(e.to_string())))
                 }
-            }
-        });
+            })
+            .recover(|err: warp::Rejection| async move {
+                if err.is_not_found() {
+                    return Ok(warp::reply::with_status("Not Found", warp::http::StatusCode::NOT_FOUND));
+                }
+                Err(err)
+            });
     
         let routes = chat.or(client_payload);
     
@@ -216,4 +205,13 @@ async fn user_disconnected(my_id: usize, users: &Users) {
 
     // Stream closed up, so remove from the user list
     users.write().await.remove(&my_id);
+}
+
+async fn handle_provider(provider: model_router::ProviderOptions, users: &Users) -> Result<String, Box<dyn std::error::Error>> {
+    let (prompt, provider_name) = match provider {
+        model_router::ProviderOptions::First(first_option) => (first_option.prompt, first_option.provider),
+        model_router::ProviderOptions::Second(scnd_option) => (scnd_option.prompt, scnd_option.provider),
+    };
+    let msg = Message::text(&prompt);
+    user_message(0, msg, users, &provider_name).await
 }
