@@ -74,11 +74,21 @@ pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send +
         ]
       }}"#, input);
 
+      r#"curl --request POST \
+      --url https://api.anthropic.com/v1/complete \
+      --header 'accept: application/json' \
+      --header 'anthropic-version: 2023-06-01' \
+      --header 'content-type: application/json' \
+      --header 'x-api-key: $ANTHROPIC_API_KEY' \
+      --data '{"prompt":"hellow"}'"#;
+
     // Make the API request
     let res = client
-        .post("https://api.openai.com/v1/chat/completions")
+        .post("https://api.anthropic.com/v1/complete")
+        .header("accept", "application/json")
+        .header("anthropic-version", "2023-06-01")
         .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", api_key))
+        .header("x-api-key", api_key)
         .body(request_payload)
         .send()
         .await?;
