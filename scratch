@@ -1,0 +1,4 @@
+{
+    models: ["gpt-3.5-turbo", "claude-instant-1.2"]
+    messages: []
+}
