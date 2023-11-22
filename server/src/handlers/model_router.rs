@@ -1,10 +1,10 @@
 #![deny(warnings)]
+#![allow(dead_code)]
 
-use std::{collections::HashMap};
+use std::collections::HashMap;
 use serde_json::Value;
 use reqwest;
 use serde::{Deserialize, Serialize};
-use warp::filters::body::json;
 use std::error::Error;
 
 // use warp::Filter;
@@ -44,6 +44,8 @@ struct OpenAIStatus {
 pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error + Send + Sync>> {
     if provider == "openai" {
         let response: OpenAIStatusApiResponse = reqwest::get("https://status.openai.com/api/v2/summary.json").await?.json().await?;
+        #[cfg(test)] // only print this in tests
+        print!("{:#?}", response);
         let status = response.status.indicator; // "none", "minor", "major", "critical"
 
         if status != "none" {
@@ -56,14 +58,14 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
         }
     } else if provider == "anthropic" {
         let status = "Anthropic API is Operational";
-        println!("{:#?}", status);
+        println!("Anthropic API is Operational");
+        //println!("{:#?}", status);
         return Ok(status.to_string());
     } else {
         let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Unknown provider");
         return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
     }
 }
-
 
 fn get_provider(model: &str) -> String {
     if ["gpt3", "gpt4"].contains(&model) {
@@ -98,4 +100,24 @@ pub async fn parse_post(payload: Payload) -> (FirstOption, ScndOption) {
     };
 
     (first_option, scnd_option)
+}
+
+// ###### TESTS ######
+
+#[cfg(test)]
+mod tests {
+    use crate::handlers::model_router::check_api_status;
+    use tokio;
+
+    #[tokio::test]
+    async fn test_check_api_status() {
+        let openai_status = check_api_status("openai".to_string()).await.unwrap();
+        assert_eq!(openai_status, "OK");
+
+        let anthropic_status = check_api_status("anthropic".to_string()).await.unwrap();
+        assert_eq!(anthropic_status, "Anthropic API is Operational");
+
+        let unknown_status = check_api_status("unknown".to_string()).await;
+        assert!(unknown_status.is_err());
+    }
 }
