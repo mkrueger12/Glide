@@ -2,8 +2,10 @@
 
 use std::{collections::HashMap};
 use serde_json::Value;
-
+use reqwest;
 use serde::{Deserialize, Serialize};
+use warp::filters::body::json;
+use std::error::Error;
 
 // use warp::Filter;
 
@@ -28,21 +30,38 @@ pub struct ScndOption {
     parameters: String,
 }
 
-pub async fn check_api_status(provider: String) -> String {
+#[derive(Debug, Deserialize)]
+struct OpenAIStatusApiResponse {
+    status: OpenAIStatus,
+}
 
+#[derive(Debug, Deserialize)]
+struct OpenAIStatus {
+    description: String,
+    indicator: String,
+}
+
+pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error + Send + Sync>> {
     if provider == "openai" {
-        let status = curl https://status.openai.com/api/v2/summary.json
-        status
-    } else if provider == "anthropic" {
-        let status = curl https://status.openai.com/api/v2/summary.json
-        status
-    } else {
-        let status = "none".to_string()
-        status
-    }
+        let response: OpenAIStatusApiResponse = reqwest::get("https://status.openai.com/api/v2/summary.json").await?.json().await?;
+        let status = response.status.indicator; // "none", "minor", "major", "critical"
 
-    let open_ai_status = curl https://status.openai.com/api/v2/summary.json
-    status
+        if status != "none" {
+            eprintln!("OpenAI API Status: {}", status);
+            let io_error = std::io::Error::new(std::io::ErrorKind::Other, "OpenAI API is down");
+            return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
+        } else {
+            println!("OpenAI API is Operational");
+            return Ok("OK".to_string());
+        }
+    } else if provider == "anthropic" {
+        let status = "Anthropic API is Operational";
+        println!("{:#?}", status);
+        return Ok(status.to_string());
+    } else {
+        let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Unknown provider");
+        return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
+    }
 }
 
 
