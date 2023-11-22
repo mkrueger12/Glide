@@ -1,5 +1,5 @@
-# glide
-Rust-based LLM Router
+# Glide
+Rusty LLM Router
 
 ## Supported Providers
 
@@ -13,3 +13,5 @@ Rust-based LLM Router
 | <img src="docs/images/localai.png" width=18>| LocalAI  | 🚧 Coming Soon  |  |
 
 <br />
+
+## Roadmap
