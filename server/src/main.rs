@@ -5,8 +5,9 @@ use std::sync::{
     Arc,
 };
 use serde::{Deserialize, Serialize};
-// mod routes;
+
 mod providers;
+mod handlers;
 
 use futures::{SinkExt, StreamExt, TryFutureExt};
 use tokio::sync::{mpsc, RwLock};
@@ -25,8 +26,10 @@ type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 
 #[derive(Deserialize, Serialize)]
 struct Payload {
-    model: String,
-    message: String,
+    model: Vec<String>,
+    prompt: Vec<String>,
+    messages: Vec<String>,
+    parameters: Vec<String>,
 }
 
 #[tokio::main]
@@ -41,19 +44,22 @@ async fn main() {
     // Turn our "state" into a new Filter...
     let users = warp::any().map(move || users.clone());
 
-    // GET /api/ws -> websocket upgrade
-    let sockets = warp::path("api/ws")
-        // The `ws()` filter will prepare Websocket handshake...
-        .and(warp::ws())
-        .and(users)
-        .map(|ws: warp::ws::Ws, users| {
-            // This will call our function if the handshake succeeds.
-            ws.on_upgrade(move |socket: WebSocket| user_connected(socket, users))
-        });
+    // GET /chat -> websocket upgrade
+    // GET /ws -> websocket upgrade 
+
+    let chat = warp::path("ws") 
+    // The `ws()` filter will prepare Websocket handshake... 
+        .and(warp::ws()) 
+        .and(users) 
+        .map(|ws: warp::ws::Ws, users| { 
+        // This will call our function if the handshake succeeds. 
+        ws.on_upgrade(move |socket: WebSocket| user_connected(socket, users)) 
+
+    }); 
 
     // POST /api/v1 with JSON body {"model":"openai","message": "hello"}
     let client_payload = warp::post()
-    .and(warp::path("api/v1"))
+    .and(warp::path!("api" / "v1"))
     .and(warp::body::content_length_limit(1024 * 16))
     .and(warp::body::json::<Payload>())
     .map(|_payload: Payload| {
@@ -65,9 +71,9 @@ async fn main() {
     // GET / -> index html
     let index = warp::path::end().map(|| warp::reply::html(INDEX_HTML));
 
-    let routes = index.or(sockets).or(client_payload);
+    // let routes = index.or(chat).or(client_payload);
 
-    //let routes = index.or(chat);
+    let routes = index.or(chat).or(client_payload);
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
