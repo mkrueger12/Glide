@@ -1,8 +1,8 @@
 #![deny(warnings)]
 #![allow(dead_code)]
 
-use std::collections::HashMap;
-use serde_json::Value;
+//use std::collections::HashMap;
+//use serde_json::Value;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -10,24 +10,24 @@ use std::error::Error;
 // use warp::Filter;
 
 #[derive(Deserialize, Serialize)]
-pub struct Payload {
+pub struct Payload { // This comes from the client
     model: Vec<String>,
     prompt: Vec<String>,
-    messages: Vec<HashMap<String, Value>>,
-    parameters: Vec<String>,
+    //messages: Vec<HashMap<String, Value>>,
+    //parameters: Vec<String>,
 }
 
 pub struct FirstOption {
     model: String,
     prompt: String,
-    messages: HashMap<String, Value>,
-    parameters: String,
+    //messages: HashMap<String, Value>,
+    //parameters: String,
 }
 pub struct ScndOption {
     model: String,
     prompt: String,
-    messages: HashMap<String, Value>,
-    parameters: String,
+    //messages: HashMap<String, Value>,
+    //parameters: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,6 +39,36 @@ struct OpenAIStatusApiResponse {
 struct OpenAIStatus {
     description: String,
     indicator: String,
+}
+
+pub async fn model_route(payload: Payload) -> Result<String, Box<dyn Error + Send + Sync>> {
+    // Parse the POST payload
+    let (first_option, scnd_option) = parse_post(payload).await;
+
+    // Select the model
+    let (first_option_provider, scnd_option_provider) = select_model(first_option, scnd_option).await;
+
+    // Check the API status for the first option provider
+    match check_api_status(first_option_provider.clone()).await {
+        Ok(status) if status == "OK" => {
+            println!("First option provider API is Operational");
+            // Continue with the rest of your code for the first option...
+            return Ok(first_option_provider);
+        },
+        _ => {
+            // If the first option API is down, check the second option
+            match check_api_status(scnd_option_provider.clone()).await {
+                Ok(status) if status == "OK" => {
+                    println!("Second option provider API is Operational");
+                    // Continue with the rest of your code for the second option...
+                    return Ok(scnd_option_provider);
+                },
+                _ => {
+                    return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Both APIs are down")));
+                }
+            }
+        }
+    }
 }
 
 pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error + Send + Sync>> {
@@ -59,16 +89,18 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
     } else if provider == "anthropic" {
         let status = "Anthropic API is Operational";
         println!("Anthropic API is Operational");
-        //println!("{:#?}", status);
+        
         return Ok(status.to_string());
     } else {
         let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Unknown provider");
+        println!("Unknown provider");
+        println!("{:#?}", io_error);
         return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
     }
 }
 
 fn get_provider(model: &str) -> String {
-    if ["gpt3", "gpt4"].contains(&model) {
+    if ["gpt-3.5-turbo", "gpt-4"].contains(&model) {
         "openai".to_string()
     } else if ["claude-instant-1.2", "claude-2.1"].contains(&model) {
         "anthropic".to_string()
@@ -88,15 +120,15 @@ pub async fn parse_post(payload: Payload) -> (FirstOption, ScndOption) {
     let first_option = FirstOption {
         model: payload.model.get(0).unwrap_or(&String::new()).clone(),
         prompt: payload.prompt.get(0).unwrap_or(&String::new()).clone(),
-        messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
-        parameters: payload.parameters.get(0).unwrap_or(&String::new()).clone(),
+        //messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
+       // parameters: payload.parameters.get(0).unwrap_or(&String::new()).clone(),
     };
 
     let scnd_option = ScndOption {
         model: payload.model.get(1).unwrap_or(&String::new()).clone(),
         prompt: payload.prompt.get(1).unwrap_or(&String::new()).clone(),
-        messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
-        parameters: payload.parameters.get(1).unwrap_or(&String::new()).clone(),
+       // messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
+        //parameters: payload.parameters.get(1).unwrap_or(&String::new()).clone(),
     };
 
     (first_option, scnd_option)

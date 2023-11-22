@@ -28,8 +28,8 @@ type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 struct Payload {
     model: Vec<String>,
     prompt: Vec<String>,
-    messages: Vec<String>,
-    parameters: Vec<String>,
+    //messages: Vec<String>,
+    //parameters: Vec<String>,
 }
 
 #[tokio::main]
@@ -57,7 +57,7 @@ async fn main() {
 
     }); 
 
-    // POST /api/v1 with JSON body {"model":"openai","message": "hello"}
+    // POST /api/v1 with JSON body {"model":["gpt-3.5-turbo"],"message": ["hello"]}
     let client_payload = warp::post()
     .and(warp::path!("api" / "v1"))
     .and(warp::body::content_length_limit(1024 * 16))
@@ -119,7 +119,10 @@ async fn user_connected(ws: WebSocket, users: Users) {
                 break;
             }
         };
-        user_message(my_id, msg, &users).await;
+
+        let model_provider = "openai";
+
+        user_message(my_id, msg, &users, model_provider).await;
     }
 
     // user_ws_rx stream will keep processing as long as the user stays
@@ -127,7 +130,7 @@ async fn user_connected(ws: WebSocket, users: Users) {
     user_disconnected(my_id, &users).await;
 }
 
-async fn user_message(my_id: usize, msg: Message, users: &Users) {
+async fn user_message(my_id: usize, msg: Message, users: &Users, provider: &str) {
 
     // Skip any non-Text messages...
     let msg = if let Ok(s) = msg.to_str() {
@@ -137,7 +140,16 @@ async fn user_message(my_id: usize, msg: Message, users: &Users) {
         return;
     };
 
-    let model_response = providers::openai::chat_with_gpt(msg).await;
+    let model_response = if provider == "openai" {
+        providers::openai::chat_with_gpt(msg).await
+    } else if provider == "anthropic" {
+        providers::openai::chat_with_gpt(msg).await
+    } else {
+        println!("Invalid provider");
+        return;
+    };
+
+    //let model_response = providers::openai::chat_with_gpt(msg).await;
 
     // Extract the inner string using pattern matching
     let new_msg = match model_response {
