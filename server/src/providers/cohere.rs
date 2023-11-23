@@ -47,7 +47,7 @@ pub struct Usage {
 }
 
 // Function to interact with ChatGPT
-pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
 
     println!("input: {}", &input);
 
@@ -61,9 +61,9 @@ pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send +
         
     // Set up the request payload
     let request_payload = format!(r#"{{
+        "model": {},
         "message": {},
-        "model": "command-light
-      }}"#, input);
+      }}"#, model, input);
 
       r#"curl 
       --request POST \

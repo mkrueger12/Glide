@@ -47,7 +47,7 @@ pub struct Usage {
 }
 
 // Function to interact with ChatGPT
-pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
     println!("input: {}", &input);
 
     dotenv().ok();
@@ -61,7 +61,7 @@ pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send +
     // Set up the request payload
     let request_payload = format!(
         r#"{{ 
-        "model": "gpt-3.5-turbo",
+        "model": {},
         "messages": [
           {{
             "role": "system",
@@ -73,7 +73,7 @@ pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send +
           }}
         ]
       }}"#,
-        input
+        model, input
     );
 
     // Make the API request

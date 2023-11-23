@@ -144,8 +144,9 @@ async fn user_connected(ws: WebSocket, users: Users) {
         };
 
         let model_provider = "openai";
+        let model_name = "max needs to delete this function";
 
-        let _r = user_message(my_id, msg, &users, model_provider).await;
+        let _r = user_message(my_id, msg, &users, model_provider, model_name).await;
     }
 
     // user_ws_rx stream will keep processing as long as the user stays
@@ -158,6 +159,7 @@ async fn user_message(
     msg: Message,
     users: &Users,
     provider: &str,
+    model_name: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
     // Skip any non-Text messages...
     let msg = if let Ok(s) = msg.to_str() {
@@ -171,9 +173,9 @@ async fn user_message(
     };
 
     let model_response = if provider == "openai" {
-        providers::openai::chat_with_gpt(msg).await
+        providers::openai::chat_with_gpt(msg, model_name).await
     } else if provider == "anthropic" {
-        providers::openai::chat_with_gpt(msg).await
+        providers::openai::chat_with_gpt(msg, model_name).await
     } else {
         println!("Invalid provider");
         return Err(Box::new(std::io::Error::new(
@@ -223,14 +225,14 @@ async fn handle_provider(
     provider: model_router::ProviderOptions,
     users: &Users,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let (prompt, provider_name) = match provider {
+    let (prompt, provider_name, model_name) = match provider {
         model_router::ProviderOptions::First(first_option) => {
-            (first_option.prompt, first_option.provider)
+            (first_option.prompt, first_option.provider, first_option.model)
         }
         model_router::ProviderOptions::Second(scnd_option) => {
-            (scnd_option.prompt, scnd_option.provider)
+            (scnd_option.prompt, scnd_option.provider, scnd_option.model)
         }
     };
     let msg = Message::text(&prompt);
-    user_message(0, msg, users, &provider_name).await
+    user_message(0, msg, users, &provider_name, &model_name).await
 }
