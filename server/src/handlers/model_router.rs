@@ -10,7 +10,8 @@ use std::error::Error;
 // use warp::Filter;
 
 #[derive(Deserialize, Serialize)]
-pub struct Payload { // This comes from the client
+pub struct Payload {
+    // This comes from the client
     pub model: Vec<String>,
     pub prompt: Vec<String>,
     //messages: Vec<HashMap<String, Value>>,
@@ -48,7 +49,9 @@ pub enum ProviderOptions {
     Second(ScndOption),
 }
 
-pub async fn model_route(payload: Payload) -> Result<ProviderOptions, Box<dyn Error + Send + Sync>> {
+pub async fn model_route(
+    payload: Payload,
+) -> Result<ProviderOptions, Box<dyn Error + Send + Sync>> {
     // Parse the POST payload
     let (first_option, scnd_option) = parse_post(payload).await;
 
@@ -62,7 +65,7 @@ pub async fn model_route(payload: Payload) -> Result<ProviderOptions, Box<dyn Er
             println!("First option provider API is Operational");
             // Continue with the rest of your code for the first option...
             return Ok(ProviderOptions::First(first_option));
-        },
+        }
         _ => {
             // If the first option API is down, check the second option
             match check_api_status(scnd_option_provider).await {
@@ -70,9 +73,12 @@ pub async fn model_route(payload: Payload) -> Result<ProviderOptions, Box<dyn Er
                     println!("Second option provider API is Operational");
                     // Continue with the rest of your code for the second option...
                     return Ok(ProviderOptions::Second(scnd_option));
-                },
+                }
                 _ => {
-                    return Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Both APIs are down")));
+                    return Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Both APIs are down",
+                    )));
                 }
             }
         }
@@ -81,7 +87,11 @@ pub async fn model_route(payload: Payload) -> Result<ProviderOptions, Box<dyn Er
 
 pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error + Send + Sync>> {
     if provider == "openai" {
-        let response: OpenAIStatusApiResponse = reqwest::get("https://status.openai.com/api/v2/summary.json").await?.json().await?;
+        let response: OpenAIStatusApiResponse =
+            reqwest::get("https://status.openai.com/api/v2/summary.json")
+                .await?
+                .json()
+                .await?;
         #[cfg(test)] // only print this in tests
         print!("{:#?}", response);
         let status = response.status.indicator; // "none", "minor", "major", "critical"
@@ -97,7 +107,7 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
     } else if provider == "anthropic" {
         let status = "Anthropic API is Operational";
         println!("Anthropic API is Operational");
-        
+
         return Ok(status.to_string());
     } else {
         let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Unknown provider");
@@ -123,14 +133,14 @@ pub async fn parse_post(payload: Payload) -> (FirstOption, ScndOption) {
         prompt: payload.prompt.get(0).unwrap_or(&String::new()).clone(),
         provider: get_provider(payload.model.get(0).unwrap_or(&String::new())),
         //messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
-       // parameters: payload.parameters.get(0).unwrap_or(&String::new()).clone(),
+        // parameters: payload.parameters.get(0).unwrap_or(&String::new()).clone(),
     };
 
     let scnd_option = ScndOption {
         model: payload.model.get(1).unwrap_or(&String::new()).clone(),
         prompt: payload.prompt.get(1).unwrap_or(&String::new()).clone(),
         provider: get_provider(payload.model.get(1).unwrap_or(&String::new())),
-       // messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
+        // messages: payload.messages.get(0).unwrap_or(&HashMap::new()).clone(),
         //parameters: payload.parameters.get(1).unwrap_or(&String::new()).clone(),
     };
 
@@ -146,7 +156,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_api_status() {
-
         // Check if OpenAI API is up
         let openai_status = check_api_status("openai".to_string()).await;
         // assert_eq!(openai_status, "OK");
