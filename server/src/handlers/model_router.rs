@@ -104,14 +104,9 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
             println!("OpenAI API is Operational");
             return Ok("OK".to_string());
         }
-    } else if provider == "anthropic" {
-        let status = "Anthropic API is Operational";
-        println!("Anthropic API is Operational");
-
-        return Ok(status.to_string());
     } else {
-        let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Unknown provider");
-        println!("Unknown provider");
+        let io_error = std::io::Error::new(std::io::ErrorKind::Other, "LLM provider not yet supported.");
+        //println!("Unknown provider");
         println!("{:#?}", io_error);
         return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
     }
