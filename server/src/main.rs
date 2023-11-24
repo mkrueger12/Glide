@@ -12,6 +12,7 @@ mod handlers;
 mod providers;
 mod config;
 use handlers::model_router;
+use config::settings;
 
 use futures::{SinkExt, StreamExt, TryFutureExt};
 use tokio::sync::{mpsc, RwLock};
@@ -19,7 +20,6 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::reject::Reject;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
-
 
 
 #[derive(Debug)]
@@ -36,6 +36,14 @@ impl MyError {
 impl Reject for MyError {}
 
 
+lazy_static! {
+        pub static ref CONF: settings::Settings = {
+            let settings = settings::Settings::new().unwrap();
+            settings
+        };
+    }
+
+
 
 /// Our global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
@@ -49,10 +57,6 @@ type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
-
-    let settings = Settings::new().unwrap();
-
-    let open = settings.openai.endpoint;
 
     // Keep track of all connected users, key is usize, value
     // is a websocket sender.

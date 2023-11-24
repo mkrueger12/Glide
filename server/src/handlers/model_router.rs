@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::env;
 use serde_json::from_str;
-use crate::config::config;
+use crate::config::settings;
 
 // use warp::Filter;
 
@@ -125,7 +125,7 @@ fn get_env_models(var: &str) -> Vec<String> {
 fn get_provider(model: &str) -> String {
 
 
-    let openai_models: Vec<String> = config::CONFIG.openai.models;
+    let openai_models: Vec<String> = settings::CONF.openai.models;
     //let cohere_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
     //let anthropic_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
 

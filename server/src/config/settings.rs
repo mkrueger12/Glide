@@ -16,7 +16,6 @@ pub struct Settings {
     pub anthropic: ServiceConfig,
 }
 
-
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
 
@@ -33,12 +32,3 @@ impl Settings {
     }
 }
 
-pub mod conf {
-
-    lazy_static! {
-        pub static ref CONF: Settings = {
-            let settings = Settings::new().unwrap();
-            settings
-        };
-    }
-}
