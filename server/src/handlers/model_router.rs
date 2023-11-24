@@ -6,8 +6,10 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use dotenvy::dotenv;
 use std::env;
+use serde_json::from_str;
+use config::{Config, File};
+use std::collections::HashMap;
 
 // use warp::Filter;
 
@@ -115,16 +117,31 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
 }
 
 
+fn get_env_models(var: &str) -> Vec<String> {
+    let models_str = env::var(var).unwrap_or_default();
+    from_str(&models_str).unwrap_or_default()
+}
+
+
 fn get_provider(model: &str) -> String {
 
-    let cohere_models = env::var("COHERE_ENDPOINT").to_string();
+    let key = "openai.models";
 
-    if ["gpt-3.5-turbo", "gpt-4"].contains(&model) {
+    let openai_models: Vec<String> = match config.get(key) {
+        Some(value) => println!("The value for {} is {}", key, value),
+        None => println!("No value found for {}", key),
+    };
+    let cohere_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
+    let anthropic_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
+
+    let model_string = model.to_string();
+
+    if openai_models.contains(&model_string) {
         "openai".to_string()
-    } else if ["claude-instant-1.2", "claude-2.1"].contains(&model) {
+    } else if anthropic_models.contains(&model_string) {
         "anthropic".to_string()
-    } else if cohere_models.contains(&model) {
-            "cohere".to_string()
+    } else if cohere_models.contains(&model_string) {
+        "cohere".to_string()
     } else {
         "none".to_string()
     }

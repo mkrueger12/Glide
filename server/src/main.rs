@@ -16,6 +16,10 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::reject::Reject;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
+mod settings;
+
+use settings::Settings;
+
 
 #[derive(Debug)]
 struct MyError {
@@ -42,6 +46,10 @@ type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
+
+    let settings = Settings::new();
+
+    let open = settings.unwrap().openai.endpoint;
 
     // Keep track of all connected users, key is usize, value
     // is a websocket sender.
