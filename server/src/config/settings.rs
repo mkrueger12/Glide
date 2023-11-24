@@ -28,7 +28,7 @@ impl Settings {
             .build()?;
 
         // Now that we're done, let's access our configuration
-        println!("provider: {:?}", s.get::<String>("database.url"));
+        //println!("provider: {:?}", s.get::<String>("database.url"));
 
         // You can deserialize (and thus freeze) the entire configuration as
         s.try_deserialize()
