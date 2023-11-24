@@ -54,7 +54,8 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
     dotenv().ok();
 
     // Set your OpenAI API key
-    let api_key = env::var("OPENAI_KEY").expect("OPENAI_KEY not set");
+    let api_key = env::var("COHERE_KEY").expect("COHERE_KEY not set");
+    let api_path = env::var("COHERE_ENDPOINT").expect("Cohere API Endpoint not set");
 
     // Set up the HTTP client
     let client = reqwest::Client::new();
@@ -84,11 +85,10 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
 
     // Make the API request
     let res = client
-        .post("https://api.anthropic.com/v1/complete")
+        .post(api_path)
         .header("accept", "application/json")
-        .header("anthropic-version", "2023-06-01")
         .header("Content-Type", "application/json")
-        .header("x-api-key", api_key)
+        .header("Authorization", api_key)
         .body(request_payload)
         .send()
         .await?;

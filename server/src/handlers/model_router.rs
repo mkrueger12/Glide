@@ -6,6 +6,8 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use dotenvy::dotenv;
+use std::env;
 
 // use warp::Filter;
 
@@ -112,11 +114,17 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
     }
 }
 
+
 fn get_provider(model: &str) -> String {
+
+    let cohere_models = env::var("COHERE_ENDPOINT").to_string();
+
     if ["gpt-3.5-turbo", "gpt-4"].contains(&model) {
         "openai".to_string()
     } else if ["claude-instant-1.2", "claude-2.1"].contains(&model) {
         "anthropic".to_string()
+    } else if cohere_models.contains(&model) {
+            "cohere".to_string()
     } else {
         "none".to_string()
     }
