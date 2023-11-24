@@ -1,6 +1,5 @@
 #![deny(warnings)]
 #![allow(dead_code)]
-#[macro_use]
 extern crate lazy_static;
 use std::collections::HashMap;
 use std::sync::{
@@ -34,15 +33,6 @@ impl MyError {
 }
 
 impl Reject for MyError {}
-
-
-lazy_static! {
-        pub static ref CONF: settings::Settings = {
-            let settings = settings::Settings::new().unwrap();
-            settings
-        };
-    }
-
 
 
 /// Our global unique user id counter.

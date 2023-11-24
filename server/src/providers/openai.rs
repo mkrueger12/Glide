@@ -3,6 +3,7 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
+use crate::config::settings::CONF;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatGptRequest {
@@ -78,7 +79,7 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
 
     // Make the API request
     let res = client
-        .post("https://api.openai.com/v1/chat/completions")
+        .post(&CONF.openai.endpoint)
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
         .body(request_payload)

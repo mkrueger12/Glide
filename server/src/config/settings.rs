@@ -1,5 +1,8 @@
+
 use config::{Config, ConfigError, File};
 use serde::Deserialize;
+use crate::settings;
+use lazy_static::lazy_static;
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
@@ -32,3 +35,9 @@ impl Settings {
     }
 }
 
+lazy_static! {
+    pub static ref CONF: settings::Settings = {
+        let settings = settings::Settings::new().unwrap();
+        settings
+    };
+}

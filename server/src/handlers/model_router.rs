@@ -6,11 +6,7 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::env;
-use serde_json::from_str;
-use crate::config::settings;
-
-// use warp::Filter;
+use crate::config::settings::CONF;
 
 #[derive(Deserialize, Serialize)]
 pub struct Payload {
@@ -51,6 +47,7 @@ pub enum ProviderOptions {
     First(FirstOption),
     Second(ScndOption),
 }
+
 
 pub async fn model_route(
     payload: Payload,
@@ -116,18 +113,13 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
 }
 
 
-fn get_env_models(var: &str) -> Vec<String> {
-    let models_str = env::var(var).unwrap_or_default();
-    from_str(&models_str).unwrap_or_default()
-}
-
 
 fn get_provider(model: &str) -> String {
 
 
-    let openai_models: Vec<String> = settings::CONF.openai.models;
-    //let cohere_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
-    //let anthropic_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
+    let openai_models: &Vec<String> = &CONF.openai.models;
+    let anthropic_models: &Vec<String> = &CONF.anthropic.models;
+    let cohere_models: &Vec<String> = &CONF.cohere.models;
 
     let model_string = model.to_string();
 
