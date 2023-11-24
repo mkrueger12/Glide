@@ -19,7 +19,6 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
-       // let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
 
         let s = Config::builder()
             // Start off by merging in the "default" configuration file
@@ -31,5 +30,15 @@ impl Settings {
 
         // You can deserialize (and thus freeze) the entire configuration as
         s.try_deserialize()
+    }
+}
+
+pub mod conf {
+
+    lazy_static! {
+        pub static ref CONF: Settings = {
+            let settings = Settings::new().unwrap();
+            settings
+        };
     }
 }

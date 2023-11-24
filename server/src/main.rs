@@ -1,5 +1,7 @@
 #![deny(warnings)]
 #![allow(dead_code)]
+#[macro_use]
+extern crate lazy_static;
 use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -8,6 +10,7 @@ use std::sync::{
 
 mod handlers;
 mod providers;
+mod config;
 use handlers::model_router;
 
 use futures::{SinkExt, StreamExt, TryFutureExt};
@@ -16,9 +19,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::reject::Reject;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
-mod settings;
 
-use settings::Settings;
 
 
 #[derive(Debug)]
@@ -34,6 +35,8 @@ impl MyError {
 
 impl Reject for MyError {}
 
+
+
 /// Our global unique user id counter.
 static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
@@ -47,9 +50,9 @@ type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 async fn main() {
     pretty_env_logger::init();
 
-    let settings = Settings::new();
+    let settings = Settings::new().unwrap();
 
-    let open = settings.unwrap().openai.endpoint;
+    let open = settings.openai.endpoint;
 
     // Keep track of all connected users, key is usize, value
     // is a websocket sender.

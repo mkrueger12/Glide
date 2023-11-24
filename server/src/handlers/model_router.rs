@@ -8,8 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::env;
 use serde_json::from_str;
-use config::{Config, File};
-use std::collections::HashMap;
+use crate::config::config;
 
 // use warp::Filter;
 
@@ -125,14 +124,10 @@ fn get_env_models(var: &str) -> Vec<String> {
 
 fn get_provider(model: &str) -> String {
 
-    let key = "openai.models";
 
-    let openai_models: Vec<String> = match config.get(key) {
-        Some(value) => println!("The value for {} is {}", key, value),
-        None => println!("No value found for {}", key),
-    };
-    let cohere_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
-    let anthropic_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
+    let openai_models: Vec<String> = config::CONFIG.openai.models;
+    //let cohere_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
+    //let anthropic_models: Vec<String> = settings.get_array("cohere.models")?.into_iter().map(|v| v.into_string().unwrap()).collect();
 
     let model_string = model.to_string();
 
