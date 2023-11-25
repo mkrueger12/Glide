@@ -78,8 +78,9 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
     );
 
     // Make the API request
+    let openai_endpoint: &String = CONF.as_ref().map(|settings| &settings.cohere.endpoint).unwrap();
     let res = client
-        .post(&CONF.openai.endpoint)
+        .post(openai_endpoint)
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
         .body(request_payload)

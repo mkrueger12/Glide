@@ -25,7 +25,7 @@ impl Settings {
 
         let s = Config::builder()
             // Start off by merging in the "default" configuration file
-            .add_source(File::with_name("server/src/config/config"))
+            .add_source(File::with_name("src/config/config.toml"))
             .build()?;
 
         // Now that we're done, let's access our configuration
@@ -37,8 +37,7 @@ impl Settings {
 }
 
 lazy_static! {
-    pub static ref CONF: settings::Settings = {
-        let settings = settings::Settings::new().unwrap();
-        settings
+    pub static ref CONF: Result<settings::Settings, ConfigError> = {
+        settings::Settings::new()
     };
 }

@@ -1,5 +1,5 @@
-#![deny(warnings)]
-#![allow(dead_code)]
+//#![deny(warnings)]
+//#![allow(dead_code)]
 extern crate lazy_static;
 use std::collections::HashMap;
 use std::sync::{
@@ -179,8 +179,8 @@ async fn user_message(
 
     let model_response = if provider == "openai" {
         providers::openai::chat_with_gpt(msg, model_name).await
-    } else if provider == "anthropic" {
-        providers::openai::chat_with_gpt(msg, model_name).await
+    } else if provider == "cohere" {
+        providers::cohere::chat_with_cohere(msg, model_name).await
     } else {
         println!("Invalid provider");
         return Err(Box::new(std::io::Error::new(

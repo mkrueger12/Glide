@@ -1,5 +1,5 @@
-#![deny(warnings)]
-#![allow(dead_code)]
+//#![deny(warnings)]
+//#![allow(dead_code)]
 
 //use std::collections::HashMap;
 //use serde_json::Value;
@@ -86,9 +86,13 @@ pub async fn model_route(
 }
 
 pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error + Send + Sync>> {
+
+    let openai_status: &String = CONF.as_ref().map(|settings| &settings.openai.status).unwrap();
+    let cohere_status: &String = CONF.as_ref().map(|settings| &settings.openai.status).unwrap();
+
     if provider == "openai" {
         let response: OpenAIStatusApiResponse =
-            reqwest::get(&CONF.openai.status) //
+            reqwest::get(openai_status) //
                 .await?
                 .json()
                 .await?;
@@ -106,7 +110,7 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
         }
     } else if provider == "cohere" {
         let response: OpenAIStatusApiResponse =
-            reqwest::get(&CONF.cohere.status) // TODO: use CONF.openai.status_endpoint
+            reqwest::get(cohere_status) // TODO: use CONF.openai.status_endpoint
                 .await?
                 .json()
                 .await?;
@@ -116,7 +120,7 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
 
         if status != "none" {
             eprintln!("Cohere API Status: {}", status);
-            let io_error = std::io::Error::new(std::io::ErrorKind::Other, "OpenAI API is down");
+            let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Cohere API is down");
             return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
         } else {
             println!("Cohere API is Operational");
@@ -135,9 +139,9 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
 fn get_provider(model: &str) -> String {
 
 
-    let openai_models: &Vec<String> = &CONF.openai.models;
-    let anthropic_models: &Vec<String> = &CONF.anthropic.models;
-    let cohere_models: &Vec<String> = &CONF.cohere.models;
+    let openai_models: &Vec<String> = CONF.as_ref().map(|settings| &settings.openai.models).unwrap();
+    let anthropic_models: &Vec<String> = CONF.as_ref().map(|settings| &settings.anthropic.models).unwrap();
+    let cohere_models: &Vec<String> = CONF.as_ref().map(|settings| &settings.cohere.models).unwrap();
 
     let model_string = model.to_string();
 

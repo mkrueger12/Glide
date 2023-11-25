@@ -10,5 +10,5 @@ status = "https://status.cohere.ai/api/v2/summary.json"
 
 [anthropic]
 endpoint = "https://api.cohere.ai/v1/chat"
-models = ["command", "command-light", "command-nightly", "command-nightly-light"]
+models = ["claude"]
 status = ""
