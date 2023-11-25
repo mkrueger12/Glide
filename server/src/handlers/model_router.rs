@@ -88,7 +88,7 @@ pub async fn model_route(
 pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error + Send + Sync>> {
     if provider == "openai" {
         let response: OpenAIStatusApiResponse =
-            reqwest::get("https://status.openai.com/api/v2/summary.json")
+            reqwest::get(&CONF.openai.status) //
                 .await?
                 .json()
                 .await?;
@@ -102,6 +102,24 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
             return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
         } else {
             println!("OpenAI API is Operational");
+            return Ok("OK".to_string());
+        }
+    } else if provider == "cohere" {
+        let response: OpenAIStatusApiResponse =
+            reqwest::get(&CONF.cohere.status) // TODO: use CONF.openai.status_endpoint
+                .await?
+                .json()
+                .await?;
+        #[cfg(test)] // only print this in tests
+        print!("{:#?}", response);
+        let status = response.status.indicator; // "none", "minor", "major", "critical"
+
+        if status != "none" {
+            eprintln!("Cohere API Status: {}", status);
+            let io_error = std::io::Error::new(std::io::ErrorKind::Other, "OpenAI API is down");
+            return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
+        } else {
+            println!("Cohere API is Operational");
             return Ok("OK".to_string());
         }
     } else {

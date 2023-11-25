@@ -8,7 +8,8 @@ use lazy_static::lazy_static;
 #[allow(unused)]
 pub struct ServiceConfig {
     pub endpoint: String,
-    pub models: Vec<String>
+    pub models: Vec<String>,
+    pub status: String,
 }
 
 #[derive(Debug, Deserialize)]

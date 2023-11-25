@@ -1,11 +1,14 @@
 [openai]
 endpoint = "https://api.openai.com/v1/engines/davinci/completions"
 models = ["gpt-3.5-turbo", "gpt-4"]
+status = "https://status.openai.com/api/v2/summary.json"
 
 [cohere]
 endpoint = "https://api.cohere.ai/v1/chat"
 models = ["command", "command-light", "command-nightly", "command-nightly-light"]
+status = "https://status.cohere.ai/api/v2/summary.json"
 
 [anthropic]
 endpoint = "https://api.cohere.ai/v1/chat"
 models = ["command", "command-light", "command-nightly", "command-nightly-light"]
+status = ""
