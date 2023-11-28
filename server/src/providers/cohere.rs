@@ -63,8 +63,8 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
         
     // Set up the request payload
     let request_payload = format!(r#"{{
-        "model": {},
-        "message": {},
+        "model": "{}",
+        "message": "{}",
       }}"#, model, input);
 
       r#"curl 

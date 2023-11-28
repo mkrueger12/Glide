@@ -138,15 +138,12 @@ fn get_provider(model: &str) -> String {
 
 
     let openai_models: &Vec<String> = CONF.as_ref().map(|settings| &settings.openai.models).unwrap();
-    let anthropic_models: &Vec<String> = CONF.as_ref().map(|settings| &settings.anthropic.models).unwrap();
     let cohere_models: &Vec<String> = CONF.as_ref().map(|settings| &settings.cohere.models).unwrap();
 
     let model_string = model.to_string();
 
     if openai_models.contains(&model_string) {
         "openai".to_string()
-    } else if anthropic_models.contains(&model_string) {
-        "anthropic".to_string()
     } else if cohere_models.contains(&model_string) {
         "cohere".to_string()
     } else {

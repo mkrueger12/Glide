@@ -17,7 +17,6 @@ pub struct ServiceConfig {
 pub struct Settings {
     pub openai: ServiceConfig,
     pub cohere: ServiceConfig,
-    pub anthropic: ServiceConfig,
 }
 
 impl Settings {

@@ -56,8 +56,6 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
     // Set your OpenAI API key
     let api_key = env::var("OPENAI_KEY").expect("OPENAI_KEY not set");
 
-    assert!(api_key == "", "OPENAI_KEY is not set");
-
     print!("Running OpenAI Chat");
 
     // Set up the HTTP client
@@ -66,7 +64,7 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
     // Set up the request payload
     let request_payload = format!(
         r#"{{ 
-        "model": {},
+        "model": "{}",
         "messages": [
           {{
             "role": "system",
@@ -81,8 +79,10 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
         model, input
     );
 
+    eprint!("Request Payload: {}", request_payload);
+
     // Make the API request
-    let openai_endpoint: &String = CONF.as_ref().map(|settings| &settings.cohere.endpoint).unwrap();
+    let openai_endpoint: &String = CONF.as_ref().map(|settings| &settings.openai.endpoint).unwrap();
     let res = client
         .post(openai_endpoint)
         .header("Content-Type", "application/json")

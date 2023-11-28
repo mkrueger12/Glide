@@ -1,6 +1,6 @@
 [openai]
-endpoint = "https://api.openai.com/v1/engines/davinci/completions"
-models = ["gpt-4","gpt-3.5-turbo"]
+endpoint = "https://api.openai.com/v1/chat/completions"
+models = ["gpt-4","gpt-3.5-turbo", "gpt-3.5-turbo-1106"]
 status = "https://status.openai.com/api/v2/summary.json"
 
 [cohere]
