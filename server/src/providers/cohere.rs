@@ -5,47 +5,42 @@ use dotenvy::dotenv;
 use std::error::Error;
 use crate::config::settings::CONF;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct ChatGptRequest {
-    prompt: String,
-    max_tokens: usize,
-}
+
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ChatGptResponse {
-    id: String,
-    object: String,
-    created: u64,
-    model: String,
-    //system_fingerprint: String,
-    choices: Vec<Choice>,
-    usage: Usage,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GptResponse {
-    data: Vec<Choice>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Choice {
-    index: u32,
-    message: Message,
-    finish_reason: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Message {
-    role: String,
-    content: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Usage {
+pub struct TokenCount {
     prompt_tokens: u32,
-    completion_tokens: u32,
+    response_tokens: u32,
     total_tokens: u32,
+    billed_tokens: u32,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ApiVersion {
+    version: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BilledUnits {
+    input_tokens: u32,
+    output_tokens: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Meta {
+    api_version: ApiVersion,
+    billed_units: BilledUnits,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CohereResponse {
+    response_id: String,
+    text: String,
+    generation_id: String,
+    token_count: TokenCount,
+    meta: Meta,
+}
+
 
 // Function to interact with ChatGPT
 pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
@@ -64,25 +59,10 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
     // Set up the request payload
     let request_payload = format!(r#"{{
         "model": "{}",
-        "message": "{}",
+        "message": "{}"
       }}"#, model, input);
 
-      r#"curl 
-      --request POST \
-      --url https://api.cohere.ai/v1/chat \
-      --header 'accept: application/json' \
-      --header 'content-type: application/json' \
-      --header 'Authorization: Bearer <<apiKey>>'
-      --data '
-      {
-        "chat_history": [
-          {"role": "USER", "message": "Who discovered gravity?"},
-          {"role": "CHATBOT", "message": "The man who is widely credited with discovering gravity is Sir Isaac Newton"}
-        ],
-        "message": "What year was he born?",
-        "model":"command-light"
-        "connectors": [{"id": "web-search"}]
-      }'"#;
+      eprint!("Request Payload: {}", request_payload);
 
     // Make the API request
     let cohere_endpoint: &String = CONF.as_ref().map(|settings| &settings.cohere.endpoint).unwrap();
@@ -99,7 +79,7 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
 
         eprintln!("Cohere Response: {}", body);
 
-        let response_result: Result<ChatGptResponse, _> = serde_json::from_str(&body);
+        let response_result: Result<CohereResponse, _> = serde_json::from_str(&body);
 
         let response = match response_result {
             Ok(data) => data,
@@ -111,10 +91,7 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
         };
 
     // Extract and return the response text
-    let choice = response.choices.get(0).unwrap();
-    let text = choice.message.content.clone();
-
-    //Ok(response.data[0].message.content.clone())
+    let text = response.text;
 
     Ok(text)
 }
