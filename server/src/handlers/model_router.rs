@@ -1,5 +1,5 @@
-//#![deny(warnings)]
-//#![allow(dead_code)]
+#![deny(warnings)]
+#![allow(dead_code)]
 
 //use std::collections::HashMap;
 //use serde_json::Value;
@@ -62,7 +62,7 @@ pub async fn model_route(
     // Check the API status for the first option provider
     match check_api_status(first_option_provider).await {
         Ok(status) if status == "OK" => {
-            println!("First option provider API is Operational");
+            //println!("First option provider API is Operational");
             // Continue with the rest of your code for the first option...
             return Ok(ProviderOptions::First(first_option));
         }
@@ -70,7 +70,7 @@ pub async fn model_route(
             // If the first option API is down, check the second option
             match check_api_status(scnd_option_provider).await {
                 Ok(status) if status == "OK" => {
-                    println!("Second option provider API is Operational");
+                    //println!("Second option provider API is Operational");
                     // Continue with the rest of your code for the second option...
                     return Ok(ProviderOptions::Second(scnd_option));
                 }
@@ -134,8 +134,6 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
     }
 }
 
-
-
 fn get_provider(model: &str) -> String {
 
 
@@ -196,7 +194,7 @@ mod tests {
         // Check if Anthropic API is up
         let anthropic_status = check_api_status("anthropic".to_string()).await.unwrap();
         assert_eq!(anthropic_status, "Anthropic API is Operational");
-
+        
         // Check if unknown API is up
         let unknown_status = check_api_status("unknown".to_string()).await;
         assert!(unknown_status.is_err());

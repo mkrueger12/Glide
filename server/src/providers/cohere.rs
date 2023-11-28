@@ -50,12 +50,13 @@ pub struct Usage {
 // Function to interact with ChatGPT
 pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
 
-    println!("input: {}", &input);
-
-    dotenv().ok();
+    
+    dotenv().expect("Error loading .env file");
 
     // Set your OpenAI API key
     let api_key = env::var("COHERE_KEY").expect("COHERE API KEY not set");
+
+    print!("Running Cohere Chat");
 
     // Set up the HTTP client
     let client = reqwest::Client::new();
@@ -89,14 +90,14 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
         .post(cohere_endpoint)
         .header("accept", "application/json")
         .header("Content-Type", "application/json")
-        .header("Authorization", api_key)
+        .header("Authorization", format!("Bearer {}", api_key))
         .body(request_payload)
         .send()
         .await?;
 
         let body = res.text().await?;
 
-        eprintln!("OpenAI Response: {}", body);
+        eprintln!("Cohere Response: {}", body);
 
         let response_result: Result<ChatGptResponse, _> = serde_json::from_str(&body);
 

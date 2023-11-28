@@ -1,5 +1,5 @@
-//#![deny(warnings)]
-//#![allow(dead_code)]
+#![deny(warnings)]
+#![allow(dead_code)]
 extern crate lazy_static;
 use std::collections::HashMap;
 use std::sync::{
@@ -176,6 +176,9 @@ async fn user_message(
             "Non-text message",
         )));
     };
+
+    print!("provider: {}", provider);
+    print!("model_name: {}", model_name);
 
     let model_response = if provider == "openai" {
         providers::openai::chat_with_gpt(msg, model_name).await
