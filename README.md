@@ -22,4 +22,3 @@ Achieve 100% uptime for your Generative AI applications. Glide sits between your
 - Python SDK
 - Auto-cost and performance operations
 - Open an issue if there is a feature you'd like to see
-
