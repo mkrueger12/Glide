@@ -56,7 +56,7 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
     // Set your OpenAI API key
     let api_key = env::var("OPENAI_KEY").expect("OPENAI_KEY not set");
 
-    assert!(api_key == "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", "OPENAI_KEY is not set");
+    assert!(api_key == "", "OPENAI_KEY is not set");
 
     print!("Running OpenAI Chat");
 
