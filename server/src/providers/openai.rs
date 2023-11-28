@@ -1,8 +1,9 @@
+use dotenvy::dotenv;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::env;
-use dotenvy::dotenv;
 use std::error::Error;
+use crate::config::settings::CONF;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatGptRequest {
@@ -47,21 +48,23 @@ pub struct Usage {
 }
 
 // Function to interact with ChatGPT
-pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-
+pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
     println!("input: {}", &input);
 
-    dotenv().ok();
+    dotenv().expect("Error loading .env file");
 
     // Set your OpenAI API key
     let api_key = env::var("OPENAI_KEY").expect("OPENAI_KEY not set");
 
+    print!("Running OpenAI Chat");
+
     // Set up the HTTP client
     let client = reqwest::Client::new();
-        
+
     // Set up the request payload
-    let request_payload = format!(r#"{{ 
-        "model": "gpt-3.5-turbo",
+    let request_payload = format!(
+        r#"{{ 
+        "model": "{}",
         "messages": [
           {{
             "role": "system",
@@ -72,31 +75,36 @@ pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send +
             "content": "{}"
           }}
         ]
-      }}"#, input);
+      }}"#,
+        model, input
+    );
+
+    eprint!("Request Payload: {}", request_payload);
 
     // Make the API request
+    let openai_endpoint: &String = CONF.as_ref().map(|settings| &settings.openai.endpoint).unwrap();
     let res = client
-        .post("https://api.openai.com/v1/chat/completions")
+        .post(openai_endpoint)
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
         .body(request_payload)
         .send()
         .await?;
 
-        let body = res.text().await?;
+    let body = res.text().await?;
 
-        eprintln!("OpenAI Response: {}", body);
+    eprintln!("OpenAI Response: {}", body);
 
-        let response_result: Result<ChatGptResponse, _> = serde_json::from_str(&body);
+    let response_result: Result<ChatGptResponse, _> = serde_json::from_str(&body);
 
-        let response = match response_result {
-            Ok(data) => data,
-            Err(err) => {
-                eprintln!("Failed to parse response: {}", err);
-                let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse JSON");
-                return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
-            }
-        };
+    let response = match response_result {
+        Ok(data) => data,
+        Err(err) => {
+            eprintln!("Failed to parse response: {}", err);
+            let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse JSON");
+            return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
+        }
+    };
 
     // Extract and return the response text
     let choice = response.choices.get(0).unwrap();
@@ -106,5 +114,3 @@ pub async fn chat_with_gpt(input: &str) -> Result<String, Box<dyn Error + Send +
 
     Ok(text)
 }
-
-
