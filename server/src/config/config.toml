@@ -1,3 +1,7 @@
+[generic]
+ip = '127.0.0.1'
+port = 3030
+
 [openai]
 endpoint = "https://api.openai.com/v1/chat/completions"
 models = ["gpt-4","gpt-3.5-turbo", "gpt-3.5-turbo-1106"]

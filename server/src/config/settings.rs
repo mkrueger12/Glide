@@ -1,4 +1,6 @@
 
+use std::net::Ipv4Addr;
+
 use config::{Config, ConfigError, File};
 use serde::Deserialize;
 use crate::settings;
@@ -14,9 +16,17 @@ pub struct ServiceConfig {
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
+pub struct GenericServiceConfig {
+    pub ip: Ipv4Addr,
+    pub port: u16,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
 pub struct Settings {
     pub openai: ServiceConfig,
     pub cohere: ServiceConfig,
+    pub generic: GenericServiceConfig,
 }
 
 impl Settings {

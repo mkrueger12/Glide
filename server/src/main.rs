@@ -19,6 +19,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::reject::Reject;
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
+use crate::config::settings::CONF;
 
 
 #[derive(Debug)]
@@ -56,17 +57,6 @@ async fn main() {
     let users = warp::any().map(move || users.clone());
     let users_clone = users.clone();
 
-    // GET /ws -> websocket upgrade
-
-    let chat = warp::path("ws")
-        // The `ws()` filter will prepare Websocket handshake...
-        .and(warp::ws())
-        .and(users)
-        .map(|ws: warp::ws::Ws, users| {
-            // This will call our function if the handshake succeeds.
-            ws.on_upgrade(move |socket: WebSocket| user_connected(socket, users))
-        });
-
     // POST /api/v1 with JSON body {"model":["gpt-3.5-turbo"],"message": ["hello"]}
     let client_payload = warp::post()
         .and(warp::path!("api" / "v1"))
@@ -101,9 +91,13 @@ async fn main() {
             Err(err)
         });
 
-    let routes = chat.or(client_payload);
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+    let ip = CONF.as_ref().map(|settings| settings.generic.ip).unwrap();
+    let port = CONF.as_ref().map(|settings| settings.generic.port).unwrap();
+
+    let socket_addr: std::net::SocketAddr = (ip, port).into();
+
+    warp::serve(client_payload).run(socket_addr).await;
 }
 
 async fn user_connected(ws: WebSocket, users: Users) {
