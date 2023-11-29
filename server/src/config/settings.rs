@@ -7,7 +7,6 @@ use crate::settings;
 use lazy_static::lazy_static;
 
 #[derive(Debug, Deserialize)]
-#[allow(unused)]
 pub struct ServiceConfig {
     pub endpoint: String,
     pub models: Vec<String>,
@@ -15,14 +14,12 @@ pub struct ServiceConfig {
 }
 
 #[derive(Debug, Deserialize)]
-#[allow(unused)]
 pub struct GenericServiceConfig {
     pub ip: Ipv4Addr,
     pub port: u16,
 }
 
 #[derive(Debug, Deserialize)]
-#[allow(unused)]
 pub struct Settings {
     pub openai: ServiceConfig,
     pub cohere: ServiceConfig,
