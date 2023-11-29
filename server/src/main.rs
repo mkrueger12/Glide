@@ -1,11 +1,8 @@
-#![deny(warnings)]
-#![allow(dead_code)]
+//#![deny(warnings)]
+//#![allow(dead_code)]
 extern crate lazy_static;
 use std::collections::HashMap;
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Arc,
-};
+use std::sync::Arc;
 
 mod handlers;
 mod providers;
@@ -13,31 +10,30 @@ mod config;
 use handlers::model_router;
 use config::settings;
 
-use futures::{SinkExt, StreamExt, TryFutureExt};
 use tokio::sync::{mpsc, RwLock};
-use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::reject::Reject;
-use warp::ws::{Message, WebSocket};
+use warp::ws::Message;
 use warp::Filter;
 use crate::config::settings::CONF;
 
 
 #[derive(Debug)]
-struct MyError {
-    message: String,
+pub struct MyError {
+    pub message: String,
 }
 
 impl MyError {
-    fn new(message: String) -> Self {
+    pub fn new(message: String) -> Self {
         Self { message }
+    }
+
+    pub fn message(&self) -> &String {
+        &self.message
     }
 }
 
 impl Reject for MyError {}
 
-
-/// Our global unique user id counter.
-static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
 /// Our state of currently connected users.
 ///
@@ -100,58 +96,6 @@ async fn main() {
     warp::serve(client_payload).run(socket_addr).await;
 }
 
-async fn user_connected(ws: WebSocket, users: Users) {
-    // Use a counter to assign a new unique ID for this user.
-    let my_id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
-
-    eprintln!("new chat user: {}", my_id);
-
-    // Split the socket into a sender and receive of messages.
-    let (mut user_ws_tx, mut user_ws_rx) = ws.split();
-
-    // Use an unbounded channel to handle buffering and flushing of messages
-    // to the websocket...
-    let (tx, rx) = mpsc::unbounded_channel();
-    let mut rx = UnboundedReceiverStream::new(rx);
-
-    tokio::task::spawn(async move {
-        while let Some(message) = rx.next().await {
-            user_ws_tx
-                .send(message)
-                .unwrap_or_else(|e| {
-                    eprintln!("websocket send error: {}", e);
-                })
-                .await;
-        }
-    });
-
-    // Save the sender in our list of connected users.
-    users.write().await.insert(my_id, tx);
-
-    // Return a `Future` that is basically a state machine managing
-    // this specific user's connection.
-
-    // Every time the user sends a message, broadcast it to
-    // all other users...
-    while let Some(result) = user_ws_rx.next().await {
-        let msg = match result {
-            Ok(msg) => msg,
-            Err(e) => {
-                eprintln!("websocket error(uid={}): {}", my_id, e);
-                break;
-            }
-        };
-
-        let model_provider = "openai";
-        let model_name = "max needs to delete this function";
-
-        let _r = user_message(my_id, msg, &users, model_provider, model_name).await;
-    }
-
-    // user_ws_rx stream will keep processing as long as the user stays
-    // connected. Once they disconnect, then...
-    user_disconnected(my_id, &users).await;
-}
 
 async fn user_message(
     my_id: usize,
@@ -214,13 +158,6 @@ async fn user_message(
         }
     }
     Ok(new_msg)
-}
-
-async fn user_disconnected(my_id: usize, users: &Users) {
-    eprintln!("good bye user: {}", my_id);
-
-    // Stream closed up, so remove from the user list
-    users.write().await.remove(&my_id);
 }
 
 async fn handle_provider(
