@@ -1,5 +1,6 @@
 //#![deny(warnings)]
 //#![allow(dead_code)]
+#![forbid(unsafe_code)]
 extern crate lazy_static;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -166,7 +167,6 @@ async fn user_message(
         }
     };
 
-    //let new_msg = format!("<User#{}>: {:#?}", my_id, msg);
 
     // New message from this user, send it to everyone else (except same uid)...
     for (&uid, tx) in users.read().await.iter() {

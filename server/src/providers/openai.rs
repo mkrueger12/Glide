@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use dotenvy::dotenv;
 use reqwest;
 use serde::{Deserialize, Serialize};
@@ -82,7 +84,7 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
     eprint!("Request Payload: {}", request_payload);
 
     // Make the API request
-    let openai_endpoint: &String = CONF.as_ref().map(|settings| &settings.openai.endpoint).unwrap();
+    let openai_endpoint: &String = CONF.as_ref().map(|settings| &settings.openai.endpoint).unwrap(); //This unwrap will cause a panic if empty
     let res = client
         .post(openai_endpoint)
         .header("Content-Type", "application/json")
@@ -109,8 +111,6 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
     // Extract and return the response text
     let choice = response.choices.get(0).unwrap();
     let text = choice.message.content.clone();
-
-    //Ok(response.data[0].message.content.clone())
 
     Ok(text)
 }
