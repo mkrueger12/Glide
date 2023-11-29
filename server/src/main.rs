@@ -15,6 +15,8 @@ use warp::reject::Reject;
 use warp::ws::Message;
 use warp::Filter;
 use crate::config::settings::CONF;
+use async_trait::async_trait;
+use std::error::Error;
 
 
 #[derive(Debug)]
@@ -33,6 +35,28 @@ impl MyError {
 }
 
 impl Reject for MyError {}
+
+#[async_trait]
+trait Provider: Send + Sync {
+    async fn chat(&self, msg: &str, model_name: &str) -> Result<String, Box<dyn Error + Send + Sync>>;
+}
+
+struct OpenAI;
+struct Cohere;
+
+#[async_trait]
+impl Provider for OpenAI {
+    async fn chat(&self, msg: &str, model_name: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        providers::openai::chat_with_gpt(msg, model_name).await
+    }
+}
+
+#[async_trait]
+impl Provider for Cohere {
+    async fn chat(&self, msg: &str, model_name: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        providers::cohere::chat_with_cohere(msg, model_name).await
+    }
+}
 
 
 /// Our state of currently connected users.
@@ -118,19 +142,16 @@ async fn user_message(
     print!("provider: {}", provider);
     print!("model_name: {}", model_name);
 
-    let model_response = if provider == "openai" {
-        providers::openai::chat_with_gpt(msg, model_name).await
-    } else if provider == "cohere" {
-        providers::cohere::chat_with_cohere(msg, model_name).await
-    } else {
-        println!("Invalid provider");
-        return Err(Box::new(std::io::Error::new(
+    let provider: Box<dyn Provider> = match provider {
+        "openai" => Box::new(OpenAI),
+        "cohere" => Box::new(Cohere),
+        _ => return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::Other,
             "Invalid Provider",
-        )));
+        ))),
     };
 
-    //let model_response = providers::openai::chat_with_gpt(msg).await;
+    let model_response = provider.chat(msg, model_name).await;
 
     // Extract the inner string using pattern matching
     let new_msg = match model_response {
