@@ -3,7 +3,7 @@ use std::net::Ipv4Addr;
 
 use config::{Config, ConfigError, File};
 use serde::Deserialize;
-use crate::settings;
+use crate::config::settings;
 use lazy_static::lazy_static;
 
 #[derive(Debug, Deserialize)]

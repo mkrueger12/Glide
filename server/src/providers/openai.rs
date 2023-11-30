@@ -50,7 +50,7 @@ pub struct Usage {
 }
 
 // Function to interact with ChatGPT
-pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub async fn chat_with_gpt(input: &str, model: &str) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
     println!("input: {}", &input);
 
     dotenv().expect("Error loading .env file");
@@ -97,20 +97,11 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<String, Box<dyn E
 
     eprintln!("OpenAI Response: {}", body);
 
-    let response_result: Result<ChatGptResponse, _> = serde_json::from_str(&body);
+    let response_result: Result<serde_json::Value, _> = serde_json::from_str(&body);
 
-    let response = match response_result {
-        Ok(data) => data,
-        Err(err) => {
-            eprintln!("Failed to parse response: {}", err);
-            let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse JSON");
-            return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
-        }
-    };
+    match response_result {
+        Ok(response) => Ok(response),
+        Err(e) => Err(Box::new(e)),
+    }
 
-    // Extract and return the response text
-    let choice = response.choices.get(0).unwrap();
-    let text = choice.message.content.clone();
-
-    Ok(text)
 }

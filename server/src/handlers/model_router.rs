@@ -9,6 +9,7 @@ use std::error::Error;
 use crate::config::settings::CONF;
 
 #[derive(Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
 pub struct Payload {
     // This comes from the client
     pub model: Vec<String>,

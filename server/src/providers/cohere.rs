@@ -6,7 +6,6 @@ use std::error::Error;
 use crate::config::settings::CONF;
 
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenCount {
     prompt_tokens: u32,
@@ -43,7 +42,7 @@ pub struct CohereResponse {
 
 
 // Function to interact with ChatGPT
-pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub async fn chat_with_cohere(input: &str, model: &str) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
 
     
     dotenv().expect("Error loading .env file");
@@ -79,21 +78,12 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
 
         eprintln!("Cohere Response: {}", body);
 
-        let response_result: Result<CohereResponse, _> = serde_json::from_str(&body);
+        let response_result: Result<serde_json::Value, _> = serde_json::from_str(&body);
 
-        let response = match response_result {
-            Ok(data) => data,
-            Err(err) => {
-                eprintln!("Failed to parse response: {}", err);
-                let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse JSON");
-                return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
-            }
-        };
-
-    // Extract and return the response text
-    let text = response.text;
-
-    Ok(text)
+        match response_result {
+            Ok(response) => Ok(response),
+            Err(e) => Err(Box::new(e)),
+        }
 }
 
 
