@@ -13,8 +13,6 @@ pub struct Payload {
     // This comes from the client
     pub model: Vec<String>,
     pub prompt: Vec<String>,
-    //messages: Vec<HashMap<String, Value>>,
-    //parameters: Vec<String>,
 }
 
 pub struct FirstOption {

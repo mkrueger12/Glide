@@ -1,6 +1,7 @@
 //#![deny(warnings)]
 //#![allow(dead_code)]
 #![forbid(unsafe_code)]
+#[macro_use] extern crate rocket;
 extern crate lazy_static;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -18,7 +19,13 @@ use warp::Filter;
 use crate::config::settings::CONF;
 use async_trait::async_trait;
 use std::error::Error;
+use std::borrow::Cow;
 
+use rocket::State;
+use rocket::tokio::sync::Mutex;
+use rocket::serde::json::{Json, Value, json};
+use rocket::serde::{Serialize, Deserialize};
+mod payload_parse;
 
 #[derive(Debug)]
 pub struct MyError {
@@ -66,7 +73,22 @@ impl Provider for Cohere {
 /// - Value is a sender of `warp::ws::Message`
 type Users = Arc<RwLock<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 
-#[tokio::main]
+// The type to represent the ID of a message.
+type Id = usize;
+
+// We're going to store all of the messages here. No need for a DB.
+type MessageList = Mutex<Vec<String>>;
+type Messages<'r> = &'r State<MessageList>;
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+
+struct Message<'r> {
+    id: Option<Id>,
+    message: Cow<'r, str>
+}
+
+#[post("/send")]
 async fn main() {
     pretty_env_logger::init();
 
@@ -78,14 +100,7 @@ async fn main() {
     let users = warp::any().map(move || users.clone());
     let users_clone = users.clone();
 
-    // POST /api/v1 with JSON body {"model":["gpt-3.5-turbo"],"message": ["hello"]}
-    let client_payload = warp::post()
-        .and(warp::path!("api" / "v1"))
-        .and(warp::body::content_length_limit(1024 * 16))
-        .and(warp::body::json::<model_router::Payload>())
-        .and(users_clone)
-        .and_then(|payload: model_router::Payload, users: Users| async move {
-            let provider_result = handlers::model_router::model_route(payload).await; // model router handles checking API status
+    let provider_result = handlers::model_router::model_route(payload).await; // model router handles checking API status
             match provider_result {
                 Ok(provider) => {
                     let response = handle_provider(provider, &users)
@@ -100,17 +115,8 @@ async fn main() {
                     // Convert the error to a warp::Rejection
                     Err(warp::reject::custom(MyError::new(e.to_string())))
                 }
-            }
-        })
-        .recover(|err: warp::Rejection| async move {
-            if err.is_not_found() {
-                return Ok(warp::reply::with_status(
-                    "Not Found",
-                    warp::http::StatusCode::NOT_FOUND,
-                ));
-            }
-            Err(err)
-        });
+            };
+
 
 
     let ip = CONF.as_ref().map(|settings| settings.generic.ip).unwrap();
@@ -118,7 +124,6 @@ async fn main() {
 
     let socket_addr: std::net::SocketAddr = (ip, port).into();
 
-    warp::serve(client_payload).run(socket_addr).await;
 }
 
 
