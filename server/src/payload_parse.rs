@@ -6,13 +6,19 @@ use crate::providers;
 use std::error::Error;
 
 use rocket::serde::json::{Value, json};
-//use rocket::serde::{Serialize, Deserialize};
+use rocket::response::status;
 use rocket::serde::json::Json;
 use crate::handlers::model_router::Payload;
 
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct ModelResponse { 
+    response: Result<serde_json::Value, Box<dyn Error + Send + Sync>>,
+};
+
 #[async_trait]
 trait Provider: Send + Sync {
-    async fn chat(&self, msg: &str, model_name: &str) -> Result<Value, Box<dyn Error + Send + Sync>>;
+    async fn chat(&self, msg: &str, model_name: &str) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>>;
 }
 
 struct OpenAI;
@@ -20,7 +26,7 @@ struct Cohere;
 
 #[async_trait]
 impl Provider for OpenAI {
-    async fn chat(&self, msg: &str, model_name: &str) -> Result<Value, Box<dyn Error + Send + Sync>> {
+    async fn chat(&self, msg: &str, model_name: &str) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
         providers::openai::chat_with_gpt(msg, model_name).await
     }
 }
@@ -33,15 +39,15 @@ impl Provider for Cohere {
 }
 
 #[post("/post", format = "json", data = "<payload>")]
-async fn new(payload: Json<Payload>) -> Value {
+async fn new(payload: Json<Payload>) -> Result<status::Accepted<Json<Value>>, Box<dyn std::error::Error + Send + Sync>> {
 
-    let provider_result = model_router::model_route(payload.into_inner()).await;
+    let provider_result = model_router::model_route(payload.into_inner()).await?;
 
-    let (prompt, provider_name, model_name) =  handle_provider(provider_result).await.unwrap();
+    let (prompt, provider_name, model_name) =  handle_provider(provider_result).await?;
 
-    let new_msg = user_message(prompt, &provider_name, &model_name).await;
+    let new_msg = user_message(prompt, &provider_name, &model_name).await?;
 
-    json!({ "response": new_msg })
+    Ok(status::Accepted(Json(new_msg)))
 }
 
 async fn handle_provider( provider: model_router::ProviderOptions) -> Result<(String, String, String), Box<dyn std::error::Error>> {
@@ -60,17 +66,15 @@ async fn user_message(
     msg: String,
     provider: &str,
     model_name: &str,
-) -> Result<Value, Box<dyn std::error::Error>> {
+) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
     // Skip any non-Text messages...
-    let msg = if let Ok(s) = msg.to_str() {
-        eprintln!("new user msg: {}", s);
-        s
-    } else {
+    if msg.is_empty() {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::Other,
             "Non-text message",
         )));
     };
+
     // add comment
     print!("provider: {}", provider);
     print!("model_name: {}", model_name);
@@ -84,12 +88,8 @@ async fn user_message(
         ))),
     };
 
-    let model_response = provider.chat(msg, model_name).await;
-
-    model_response
-
+    Ok(provider.chat(&msg, model_name).await?)
 }
-
 
 #[catch(404)]
 fn not_found() -> Value {
