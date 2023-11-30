@@ -1,6 +1,7 @@
 //#![deny(warnings)]
 //#![allow(dead_code)]
 #![forbid(unsafe_code)]
+#[macro_use] extern crate rocket;
 extern crate lazy_static;
 use std::collections::HashMap;
 use std::sync::Arc;
