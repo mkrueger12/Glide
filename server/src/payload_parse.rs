@@ -6,15 +6,18 @@ use crate::providers;
 use std::error::Error;
 
 use rocket::serde::json::{Value, json};
+use rocket::serde::Serialize;
 use rocket::response::status;
 use rocket::serde::json::Json;
 use crate::handlers::model_router::Payload;
 
+use rocket::http::Status;
+
 #[derive(Serialize)]
 #[serde(crate = "rocket::serde")]
 struct ModelResponse { 
-    response: Result<serde_json::Value, Box<dyn Error + Send + Sync>>,
-};
+    response: Result<serde_json::Value, String>,
+}
 
 #[async_trait]
 trait Provider: Send + Sync {
@@ -39,13 +42,15 @@ impl Provider for Cohere {
 }
 
 #[post("/post", format = "json", data = "<payload>")]
-async fn new(payload: Json<Payload>) -> Result<status::Accepted<Json<Value>>, Box<dyn std::error::Error + Send + Sync>> {
+async fn new(payload: Json<Payload>) -> Result<status::Accepted<Json<Value>>, status::Custom<String>> {
+    let provider_result = model_router::model_route(payload.into_inner()).await
+        .map_err(|e| status::Custom(Status::InternalServerError, e.to_string()))?;
 
-    let provider_result = model_router::model_route(payload.into_inner()).await?;
+    let (prompt, provider_name, model_name) =  handle_provider(provider_result).await
+        .map_err(|e| status::Custom(Status::InternalServerError, e.to_string()))?;
 
-    let (prompt, provider_name, model_name) =  handle_provider(provider_result).await?;
-
-    let new_msg = user_message(prompt, &provider_name, &model_name).await?;
+    let new_msg = user_message(prompt, &provider_name, &model_name).await
+        .map_err(|e| status::Custom(Status::InternalServerError, e.to_string()))?;
 
     Ok(status::Accepted(Json(new_msg)))
 }
