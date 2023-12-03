@@ -1,12 +1,12 @@
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
-mod payload_parse;
-mod handlers;
-mod providers;
 mod config;
+mod handlers;
+mod payload_parse;
+mod providers;
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build()
-        .attach(payload_parse::stage())
+    rocket::build().attach(payload_parse::stage())
 }

@@ -1,11 +1,11 @@
 #![forbid(unsafe_code)]
 
+use crate::config::settings::CONF;
 use dotenvy::dotenv;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
-use crate::config::settings::CONF;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatGptRequest {
@@ -50,7 +50,10 @@ pub struct Usage {
 }
 
 // Function to interact with ChatGPT
-pub async fn chat_with_gpt(input: &str, model: &str) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
+pub async fn chat_with_gpt(
+    input: &str,
+    model: &str,
+) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
     println!("input: {}", &input);
 
     dotenv().expect("Error loading .env file");
@@ -84,7 +87,10 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<serde_json::Value
     eprint!("Request Payload: {}", request_payload);
 
     // Make the API request
-    let openai_endpoint: &String = CONF.as_ref().map(|settings| &settings.openai.endpoint).unwrap(); //This unwrap will cause a panic if empty
+    let openai_endpoint: &String = CONF
+        .as_ref()
+        .map(|settings| &settings.openai.endpoint)
+        .unwrap(); //This unwrap will cause a panic if empty
     let res = client
         .post(openai_endpoint)
         .header("Content-Type", "application/json")
@@ -103,5 +109,4 @@ pub async fn chat_with_gpt(input: &str, model: &str) -> Result<serde_json::Value
         Ok(response) => Ok(response),
         Err(e) => Err(Box::new(e)),
     }
-
 }

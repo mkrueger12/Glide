@@ -1,10 +1,9 @@
+use crate::config::settings::CONF;
+use dotenvy::dotenv;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::env;
-use dotenvy::dotenv;
 use std::error::Error;
-use crate::config::settings::CONF;
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenCount {
@@ -40,11 +39,11 @@ pub struct CohereResponse {
     meta: Meta,
 }
 
-
 // Function to interact with ChatGPT
-pub async fn chat_with_cohere(input: &str, model: &str) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
-
-    
+pub async fn chat_with_cohere(
+    input: &str,
+    model: &str,
+) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
     dotenv().expect("Error loading .env file");
 
     // Set your OpenAI API key
@@ -54,17 +53,23 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<serde_json::Va
 
     // Set up the HTTP client
     let client = reqwest::Client::new();
-        
+
     // Set up the request payload
-    let request_payload = format!(r#"{{
+    let request_payload = format!(
+        r#"{{
         "model": "{}",
         "message": "{}"
-      }}"#, model, input);
+      }}"#,
+        model, input
+    );
 
-      eprint!("Request Payload: {}", request_payload);
+    eprint!("Request Payload: {}", request_payload);
 
     // Make the API request
-    let cohere_endpoint: &String = CONF.as_ref().map(|settings| &settings.cohere.endpoint).unwrap();
+    let cohere_endpoint: &String = CONF
+        .as_ref()
+        .map(|settings| &settings.cohere.endpoint)
+        .unwrap();
     let res = client
         .post(cohere_endpoint)
         .header("accept", "application/json")
@@ -74,16 +79,14 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<serde_json::Va
         .send()
         .await?;
 
-        let body = res.text().await?;
+    let body = res.text().await?;
 
-        eprintln!("Cohere Response: {}", body);
+    eprintln!("Cohere Response: {}", body);
 
-        let response_result: Result<serde_json::Value, _> = serde_json::from_str(&body);
+    let response_result: Result<serde_json::Value, _> = serde_json::from_str(&body);
 
-        match response_result {
-            Ok(response) => Ok(response),
-            Err(e) => Err(Box::new(e)),
-        }
+    match response_result {
+        Ok(response) => Ok(response),
+        Err(e) => Err(Box::new(e)),
+    }
 }
-
-
