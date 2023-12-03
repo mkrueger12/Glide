@@ -129,7 +129,7 @@ fn not_found() -> Value {
 pub fn stage() -> rocket::fairing::AdHoc {
     rocket::fairing::AdHoc::on_ignite("JSON", |rocket| async {
         rocket
-            .mount("/api/vi", routes![new])
+            .mount("/api/v1", routes![new])
             .register("/api/v1", catchers![not_found])
     })
 }
