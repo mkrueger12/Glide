@@ -23,7 +23,6 @@ trait Provider: Send + Sync {
     async fn chat(
         &self,
         msg: &str,
-        model_name: &str,
     ) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>>;
 }
 
@@ -35,9 +34,8 @@ impl Provider for OpenAI {
     async fn chat(
         &self,
         msg: &str,
-        model_name: &str,
     ) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
-        providers::openai::chat_with_gpt(msg, model_name).await
+        providers::openai::chat_with_gpt(msg).await
     }
 }
 
@@ -46,9 +44,8 @@ impl Provider for Cohere {
     async fn chat(
         &self,
         msg: &str,
-        model_name: &str,
     ) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
-        providers::cohere::chat_with_cohere(msg, model_name).await
+        providers::cohere::chat_with_cohere(msg).await
     }
 }
 
@@ -115,7 +112,7 @@ async fn user_message(
         }
     };
 
-    Ok(provider.chat(&msg, model_name).await?)
+    Ok(provider.chat(&msg).await?)
 }
 
 #[catch(404)]

@@ -52,7 +52,6 @@ pub struct Usage {
 // Function to interact with ChatGPT
 pub async fn chat_with_gpt(
     input: &str,
-    model: &str,
 ) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
     println!("input: {}", &input);
 
@@ -65,8 +64,6 @@ pub async fn chat_with_gpt(
 
     // Set up the HTTP client
     let client = reqwest::Client::new();
-
-    let _ = model;
 
     eprint!("Request Payload: {}", &input);
 

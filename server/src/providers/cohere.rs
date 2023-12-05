@@ -42,7 +42,6 @@ pub struct CohereResponse {
 // Function to interact with ChatGPT
 pub async fn chat_with_cohere(
     input: &str,
-    model: &str,
 ) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
     dotenv().expect("Error loading .env file");
 
@@ -53,8 +52,6 @@ pub async fn chat_with_cohere(
 
     // Set up the HTTP client
     let client = reqwest::Client::new();
-
-    let _ = model;
 
     eprint!("Request Payload: {}", &input);
 
