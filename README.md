@@ -18,7 +18,6 @@ Achieve 100% uptime for your Generative AI applications. Glide sits between your
 
 ## Roadmap
 
-- REST API to set primary and secondary models based on LLM API status
-- Python SDK
+- REST API for reliability that can handle any # of LLMs
 - Auto-cost and performance operations
 - Open an issue if there is a feature you'd like to see
