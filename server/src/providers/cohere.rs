@@ -54,16 +54,9 @@ pub async fn chat_with_cohere(
     // Set up the HTTP client
     let client = reqwest::Client::new();
 
-    // Set up the request payload
-    let request_payload = format!(
-        r#"{{
-        "model": "{}",
-        "message": "{}"
-      }}"#,
-        model, input
-    );
+    let _ = model;
 
-    eprint!("Request Payload: {}", request_payload);
+    eprint!("Request Payload: {}", &input);
 
     // Make the API request
     let cohere_endpoint: &String = CONF
@@ -75,7 +68,7 @@ pub async fn chat_with_cohere(
         .header("accept", "application/json")
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
-        .body(request_payload)
+        .body(input.to_string())
         .send()
         .await?;
 
