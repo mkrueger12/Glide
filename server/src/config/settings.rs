@@ -41,5 +41,5 @@ impl Settings {
 }
 
 lazy_static! {
-    pub static ref CONF: Result<settings::Settings, ConfigError> = { settings::Settings::new() };
+    pub static ref CONF: Result<settings::Settings, ConfigError> = settings::Settings::new();
 }

@@ -66,36 +66,21 @@ pub async fn chat_with_gpt(
     // Set up the HTTP client
     let client = reqwest::Client::new();
 
-    // Set up the request payload
-    let request_payload = format!(
-        r#"{{ 
-        "model": "{}",
-        "messages": [
-          {{
-            "role": "system",
-            "content": "You are a helpful assistant."
-          }},
-          {{
-            "role": "user",
-            "content": "{}"
-          }}
-        ]
-      }}"#,
-        model, input
-    );
+    let _ = model;
 
-    eprint!("Request Payload: {}", request_payload);
+    eprint!("Request Payload: {}", &input);
 
     // Make the API request
     let openai_endpoint: &String = CONF
         .as_ref()
         .map(|settings| &settings.openai.endpoint)
         .unwrap(); //This unwrap will cause a panic if empty
+
     let res = client
         .post(openai_endpoint)
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
-        .body(request_payload)
+        .body(input.to_string())
         .send()
         .await?;
 
