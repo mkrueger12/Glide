@@ -1,4 +1,4 @@
-# Glide - A Rusty LLM Routing Engine
+# Glide - An LLM Routing Engine
 Achieve 100% uptime for your Generative AI applications. Glide sits between your applications and your API endpoint. Pass your model preferences to the API endpoint and your call will be routed to the correct model based on model availability.
 
 
