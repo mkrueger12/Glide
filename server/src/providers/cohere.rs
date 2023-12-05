@@ -1,11 +1,9 @@
+use crate::config::settings::CONF;
+use dotenvy::dotenv;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::env;
-use dotenvy::dotenv;
 use std::error::Error;
-use crate::config::settings::CONF;
-
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenCount {
@@ -41,11 +39,10 @@ pub struct CohereResponse {
     meta: Meta,
 }
 
-
 // Function to interact with ChatGPT
-pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-
-    
+pub async fn chat_with_cohere(
+    input: &str,
+) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
     dotenv().expect("Error loading .env file");
 
     // Set your OpenAI API key
@@ -55,45 +52,31 @@ pub async fn chat_with_cohere(input: &str, model: &str) -> Result<String, Box<dy
 
     // Set up the HTTP client
     let client = reqwest::Client::new();
-        
-    // Set up the request payload
-    let request_payload = format!(r#"{{
-        "model": "{}",
-        "message": "{}"
-      }}"#, model, input);
 
-      eprint!("Request Payload: {}", request_payload);
+    eprint!("Request Payload: {}", &input);
 
     // Make the API request
-    let cohere_endpoint: &String = CONF.as_ref().map(|settings| &settings.cohere.endpoint).unwrap();
+    let cohere_endpoint: &String = CONF
+        .as_ref()
+        .map(|settings| &settings.cohere.endpoint)
+        .unwrap();
     let res = client
         .post(cohere_endpoint)
         .header("accept", "application/json")
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
-        .body(request_payload)
+        .body(input.to_string())
         .send()
         .await?;
 
-        let body = res.text().await?;
+    let body = res.text().await?;
 
-        eprintln!("Cohere Response: {}", body);
+    eprintln!("Cohere Response: {}", body);
 
-        let response_result: Result<CohereResponse, _> = serde_json::from_str(&body);
+    let response_result: Result<serde_json::Value, _> = serde_json::from_str(&body);
 
-        let response = match response_result {
-            Ok(data) => data,
-            Err(err) => {
-                eprintln!("Failed to parse response: {}", err);
-                let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse JSON");
-                return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
-            }
-        };
-
-    // Extract and return the response text
-    let text = response.text;
-
-    Ok(text)
+    match response_result {
+        Ok(response) => Ok(response),
+        Err(e) => Err(Box::new(e)),
+    }
 }
-
-

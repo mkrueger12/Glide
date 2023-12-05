@@ -3,18 +3,17 @@
 
 //use std::collections::HashMap;
 //use serde_json::Value;
+use crate::config::settings::CONF;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use crate::config::settings::CONF;
 
 #[derive(Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
 pub struct Payload {
     // This comes from the client
     pub model: Vec<String>,
     pub prompt: Vec<String>,
-    //messages: Vec<HashMap<String, Value>>,
-    //parameters: Vec<String>,
 }
 
 pub struct FirstOption {
@@ -48,54 +47,41 @@ pub enum ProviderOptions {
     Second(ScndOption),
 }
 
-
 pub async fn model_route(
     payload: Payload,
 ) -> Result<ProviderOptions, Box<dyn Error + Send + Sync>> {
-    // Parse the POST payload
     let (first_option, scnd_option) = parse_post(payload).await;
 
-    // Select the model
     let first_option_provider = first_option.provider.clone();
     let scnd_option_provider = scnd_option.provider.clone();
 
-    // Check the API status for the first option provider
     match check_api_status(first_option_provider).await {
-        Ok(status) if status == "OK" => {
-            //println!("First option provider API is Operational");
-            // Continue with the rest of your code for the first option...
-            return Ok(ProviderOptions::First(first_option));
-        }
-        _ => {
-            // If the first option API is down, check the second option
-            match check_api_status(scnd_option_provider).await {
-                Ok(status) if status == "OK" => {
-                    //println!("Second option provider API is Operational");
-                    // Continue with the rest of your code for the second option...
-                    return Ok(ProviderOptions::Second(scnd_option));
-                }
-                _ => {
-                    return Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "Both APIs are down",
-                    )));
-                }
-            }
-        }
+        Ok(status) if status == "OK" => Ok(ProviderOptions::First(first_option)),
+        _ => match check_api_status(scnd_option_provider).await {
+            Ok(status) if status == "OK" => Ok(ProviderOptions::Second(scnd_option)),
+            _ => Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Both APIs are down",
+            ))),
+        },
     }
 }
 
 pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error + Send + Sync>> {
-
-    let openai_status: &String = CONF.as_ref().map(|settings| &settings.openai.status).unwrap();
-    let cohere_status: &String = CONF.as_ref().map(|settings| &settings.openai.status).unwrap();
+    let openai_status: &String = CONF
+        .as_ref()
+        .map(|settings| &settings.openai.status)
+        .unwrap();
+    let cohere_status: &String = CONF
+        .as_ref()
+        .map(|settings| &settings.openai.status)
+        .unwrap();
 
     if provider == "openai" {
-        let response: OpenAIStatusApiResponse =
-            reqwest::get(openai_status) //
-                .await?
-                .json()
-                .await?;
+        let response: OpenAIStatusApiResponse = reqwest::get(openai_status) //
+            .await?
+            .json()
+            .await?;
         #[cfg(test)] // only print this in tests
         print!("{:#?}", response);
         let status = response.status.indicator; // "none", "minor", "major", "critical"
@@ -103,17 +89,16 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
         if status != "none" {
             eprintln!("OpenAI API Status: {}", status);
             let io_error = std::io::Error::new(std::io::ErrorKind::Other, "OpenAI API is down");
-            return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
+            Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>)
         } else {
             println!("OpenAI API is Operational");
-            return Ok("OK".to_string());
+            Ok("OK".to_string())
         }
     } else if provider == "cohere" {
-        let response: OpenAIStatusApiResponse =
-            reqwest::get(cohere_status) // TODO: use CONF.openai.status_endpoint
-                .await?
-                .json()
-                .await?;
+        let response: OpenAIStatusApiResponse = reqwest::get(cohere_status) // TODO: use CONF.openai.status_endpoint
+            .await?
+            .json()
+            .await?;
         #[cfg(test)] // only print this in tests
         print!("{:#?}", response);
         let status = response.status.indicator; // "none", "minor", "major", "critical"
@@ -121,24 +106,29 @@ pub async fn check_api_status(provider: String) -> Result<String, Box<dyn Error 
         if status != "none" {
             eprintln!("Cohere API Status: {}", status);
             let io_error = std::io::Error::new(std::io::ErrorKind::Other, "Cohere API is down");
-            return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
+            Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>)
         } else {
             println!("Cohere API is Operational");
-            return Ok("OK".to_string());
+            Ok("OK".to_string())
         }
     } else {
-        let io_error = std::io::Error::new(std::io::ErrorKind::Other, "LLM provider not yet supported.");
+        let io_error =
+            std::io::Error::new(std::io::ErrorKind::Other, "LLM provider not yet supported.");
         //println!("Unknown provider");
         println!("{:#?}", io_error);
-        return Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>);
+        Err(Box::new(io_error) as Box<dyn std::error::Error + Send + Sync>)
     }
 }
 
 fn get_provider(model: &str) -> String {
-
-
-    let openai_models: &Vec<String> = CONF.as_ref().map(|settings| &settings.openai.models).unwrap();
-    let cohere_models: &Vec<String> = CONF.as_ref().map(|settings| &settings.cohere.models).unwrap();
+    let openai_models: &Vec<String> = CONF
+        .as_ref()
+        .map(|settings| &settings.openai.models)
+        .unwrap();
+    let cohere_models: &Vec<String> = CONF
+        .as_ref()
+        .map(|settings| &settings.cohere.models)
+        .unwrap();
 
     let model_string = model.to_string();
 
@@ -191,7 +181,7 @@ mod tests {
         // Check if Anthropic API is up
         let anthropic_status = check_api_status("anthropic".to_string()).await.unwrap();
         assert_eq!(anthropic_status, "Anthropic API is Operational");
-        
+
         // Check if unknown API is up
         let unknown_status = check_api_status("unknown".to_string()).await;
         assert!(unknown_status.is_err());

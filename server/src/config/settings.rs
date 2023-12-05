@@ -1,10 +1,9 @@
-
 use std::net::Ipv4Addr;
 
+use crate::config::settings;
 use config::{Config, ConfigError, File};
-use serde::Deserialize;
-use crate::settings;
 use lazy_static::lazy_static;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct ServiceConfig {
@@ -28,7 +27,6 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
-
         let s = Config::builder()
             // Start off by merging in the "default" configuration file
             .add_source(File::with_name("src/config/config.toml"))
@@ -43,7 +41,5 @@ impl Settings {
 }
 
 lazy_static! {
-    pub static ref CONF: Result<settings::Settings, ConfigError> = {
-        settings::Settings::new()
-    };
+    pub static ref CONF: Result<settings::Settings, ConfigError> = settings::Settings::new();
 }
