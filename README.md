@@ -8,17 +8,15 @@ Achieve 100% uptime for your Generative AI applications. Glide sits between your
 || Provider  | Support Status
 |---|---|---|
 | <img src="docs/images/openai.png" width=18 />| OpenAI | ✅ Supported  |
-| <img src="docs/images/azure.png" width=18>| Azure OpenAI | 🚧 Coming Soon  |
-| <img src="docs/images/anthropic.png" width=18>| Anthropic  | 🚧 Coming Soon  |
+| <img src="docs/images/azure.png" width=18>| Azure OpenAI | 🏗️ Coming Soon  |
+| <img src="docs/images/anthropic.png" width=18>| Anthropic  | 🏗️ Coming Soon  |
 | <img src="docs/images/cohere.png" width=18>| Cohere  | ✅ Supported |
-| <img src="docs/images/bard.png" width=18>| Google Bard  | 🚧 Coming Soon  |  |
-| <img src="docs/images/localai.png" width=18>| LocalAI  | 🚧 Coming Soon  |  |
+| <img src="docs/images/bard.png" width=18>| Google Bard  | 🏗️ Coming Soon  |  |
+| <img src="docs/images/localai.png" width=18>| LocalAI  | 🏗️ Coming Soon  |  |
 
 <br />
 
 ## Roadmap
 
 - REST API to set primary and secondary models based on LLM API status
-- Python SDK
-- Auto-cost and performance operations
 - Open an issue if there is a feature you'd like to see
